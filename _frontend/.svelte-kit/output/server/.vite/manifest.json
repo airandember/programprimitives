@@ -1,0 +1,366 @@
+{
+  ".svelte-kit/generated/server/internal.js": {
+    "file": "internal.js",
+    "name": "internal",
+    "src": ".svelte-kit/generated/server/internal.js",
+    "isEntry": true,
+    "imports": [
+      "_internal.js",
+      "_environment.js"
+    ]
+  },
+  "_Icon.js": {
+    "file": "chunks/Icon.js",
+    "name": "Icon",
+    "imports": [
+      "_ssr.js"
+    ]
+  },
+  "_book-open.js": {
+    "file": "chunks/book-open.js",
+    "name": "book-open",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_check.js": {
+    "file": "chunks/check.js",
+    "name": "check",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_chevron-right.js": {
+    "file": "chunks/chevron-right.js",
+    "name": "chevron-right",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_clock.js": {
+    "file": "chunks/clock.js",
+    "name": "clock",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_code-2.js": {
+    "file": "chunks/code-2.js",
+    "name": "code-2",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_environment.js": {
+    "file": "chunks/environment.js",
+    "name": "environment"
+  },
+  "_exports.js": {
+    "file": "chunks/exports.js",
+    "name": "exports"
+  },
+  "_flame.js": {
+    "file": "chunks/flame.js",
+    "name": "flame",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_index.js": {
+    "file": "chunks/index.js",
+    "name": "index",
+    "imports": [
+      "_ssr.js"
+    ]
+  },
+  "_internal.js": {
+    "file": "chunks/internal.js",
+    "name": "internal",
+    "imports": [
+      "_ssr.js",
+      "_ssr2.js",
+      "_environment.js"
+    ]
+  },
+  "_lock.js": {
+    "file": "chunks/lock.js",
+    "name": "lock",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_mock-data.js": {
+    "file": "chunks/mock-data.js",
+    "name": "mock-data"
+  },
+  "_play.js": {
+    "file": "chunks/play.js",
+    "name": "play",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_primitives.js": {
+    "file": "chunks/primitives.js",
+    "name": "primitives",
+    "imports": [
+      "_index.js",
+      "_mock-data.js"
+    ]
+  },
+  "_shared.js": {
+    "file": "chunks/shared.js",
+    "name": "shared",
+    "imports": [
+      "_utils.js"
+    ]
+  },
+  "_ssr.js": {
+    "file": "chunks/ssr.js",
+    "name": "ssr"
+  },
+  "_ssr2.js": {
+    "file": "chunks/ssr2.js",
+    "name": "ssr"
+  },
+  "_star.js": {
+    "file": "chunks/star.js",
+    "name": "star",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_stores.js": {
+    "file": "chunks/stores.js",
+    "name": "stores",
+    "imports": [
+      "_ssr.js",
+      "_exports.js",
+      "_utils.js",
+      "_ssr2.js"
+    ]
+  },
+  "_target.js": {
+    "file": "chunks/target.js",
+    "name": "target",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_trophy.js": {
+    "file": "chunks/trophy.js",
+    "name": "trophy",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_utils.js": {
+    "file": "chunks/utils.js",
+    "name": "utils"
+  },
+  "_x.js": {
+    "file": "chunks/x.js",
+    "name": "x",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "_zap.js": {
+    "file": "chunks/zap.js",
+    "name": "zap",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js": {
+    "file": "remote-entry.js",
+    "name": "remote-entry",
+    "src": "node_modules/@sveltejs/kit/src/runtime/app/server/remote/index.js",
+    "isEntry": true,
+    "imports": [
+      "_shared.js",
+      "_environment.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/components/svelte-4/error.svelte": {
+    "file": "entries/fallbacks/error.svelte.js",
+    "name": "entries/fallbacks/error.svelte",
+    "src": "node_modules/@sveltejs/kit/src/runtime/components/svelte-4/error.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_stores.js"
+    ]
+  },
+  "node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+    "file": "index.js",
+    "name": "index",
+    "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "isEntry": true,
+    "imports": [
+      "_shared.js",
+      "_environment.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js",
+      "_internal.js"
+    ]
+  },
+  "src/routes/+layout.svelte": {
+    "file": "entries/pages/_layout.svelte.js",
+    "name": "entries/pages/_layout.svelte",
+    "src": "src/routes/+layout.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_stores.js",
+      "_index.js",
+      "_mock-data.js",
+      "_flame.js",
+      "_zap.js",
+      "_Icon.js",
+      "_book-open.js",
+      "_code-2.js",
+      "_trophy.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_layout.DIrryfwP.css"
+    ]
+  },
+  "src/routes/+layout.ts": {
+    "file": "entries/pages/_layout.ts.js",
+    "name": "entries/pages/_layout.ts",
+    "src": "src/routes/+layout.ts",
+    "isEntry": true
+  },
+  "src/routes/+page.svelte": {
+    "file": "entries/pages/_page.svelte.js",
+    "name": "entries/pages/_page.svelte",
+    "src": "src/routes/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_Icon.js",
+      "_book-open.js",
+      "_code-2.js",
+      "_zap.js",
+      "_trophy.js"
+    ]
+  },
+  "src/routes/achievements/+page.svelte": {
+    "file": "entries/pages/achievements/_page.svelte.js",
+    "name": "entries/pages/achievements/_page.svelte",
+    "src": "src/routes/achievements/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_mock-data.js",
+      "_trophy.js",
+      "_target.js",
+      "_flame.js",
+      "_zap.js",
+      "_star.js",
+      "_lock.js"
+    ]
+  },
+  "src/routes/dashboard/+page.svelte": {
+    "file": "entries/pages/dashboard/_page.svelte.js",
+    "name": "entries/pages/dashboard/_page.svelte",
+    "src": "src/routes/dashboard/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_flame.js",
+      "_zap.js",
+      "_target.js",
+      "_clock.js",
+      "_Icon.js",
+      "_chevron-right.js"
+    ]
+  },
+  "src/routes/learn/+page.svelte": {
+    "file": "entries/pages/learn/_page.svelte.js",
+    "name": "entries/pages/learn/_page.svelte",
+    "src": "src/routes/learn/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_primitives.js",
+      "_mock-data.js",
+      "_Icon.js",
+      "_lock.js",
+      "_check.js",
+      "_star.js",
+      "_chevron-right.js"
+    ]
+  },
+  "src/routes/learn/[primitive]/+page.svelte": {
+    "file": "entries/pages/learn/_primitive_/_page.svelte.js",
+    "name": "entries/pages/learn/_primitive_/_page.svelte",
+    "src": "src/routes/learn/[primitive]/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_stores.js",
+      "_primitives.js",
+      "_mock-data.js",
+      "_x.js",
+      "_book-open.js",
+      "_play.js",
+      "_check.js",
+      "_Icon.js",
+      "_chevron-right.js"
+    ]
+  },
+  "src/routes/practice/+page.svelte": {
+    "file": "entries/pages/practice/_page.svelte.js",
+    "name": "entries/pages/practice/_page.svelte",
+    "src": "src/routes/practice/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_primitives.js",
+      "_mock-data.js",
+      "_flame.js",
+      "_trophy.js",
+      "_clock.js",
+      "_play.js",
+      "_target.js",
+      "_star.js",
+      "_chevron-right.js"
+    ]
+  },
+  "src/routes/practice/[primitive]/[exercise]/+page.svelte": {
+    "file": "entries/pages/practice/_primitive_/_exercise_/_page.svelte.js",
+    "name": "entries/pages/practice/_primitive_/_exercise_/_page.svelte",
+    "src": "src/routes/practice/[primitive]/[exercise]/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_ssr.js",
+      "_stores.js",
+      "_index.js",
+      "_mock-data.js",
+      "_primitives.js",
+      "_x.js",
+      "_clock.js",
+      "_Icon.js",
+      "_play.js",
+      "_check.js",
+      "_trophy.js",
+      "_chevron-right.js"
+    ]
+  }
+}
