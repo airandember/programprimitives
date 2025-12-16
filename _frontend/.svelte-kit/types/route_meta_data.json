@@ -1,0 +1,24 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/achievements": [
+		"src/routes/+layout.ts"
+	],
+	"/dashboard": [
+		"src/routes/+layout.ts"
+	],
+	"/learn": [
+		"src/routes/+layout.ts"
+	],
+	"/learn/[primitive]": [
+		"src/routes/+layout.ts"
+	],
+	"/practice": [
+		"src/routes/+layout.ts"
+	],
+	"/practice/[primitive]/[exercise]": [
+		"src/routes/+layout.ts"
+	]
+}
