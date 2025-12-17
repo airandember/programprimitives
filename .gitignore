@@ -10,6 +10,7 @@ _frontend/braids/node_modules/
 # ===================
 # Frontend (SvelteKit)
 _frontend/.svelte-kit/
+.svelte-kit/
 _frontend/build/
 _frontend/.vercel/
 _frontend/.netlify/

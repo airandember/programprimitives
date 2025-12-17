@@ -1,6 +1,2 @@
-{
-    "name": "programprimitives-frontend",
-    "assets": {
-        "directory": "build"
-    }
-}
+// _frontend/wrangler.jsonc
+{"name": "programprimitives",}
