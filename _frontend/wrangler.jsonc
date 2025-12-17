@@ -2,11 +2,5 @@
     "name": "programprimitives-frontend",
     "assets": {
         "directory": "build"
-    },
-    "routes": [
-        {
-            "pattern": "**",
-            "zone_name": "programprimitives.com"
-        }
-    ]
+    }
 }
