@@ -237,7 +237,7 @@
       "_trophy.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.DIrryfwP.css"
+      "_app/immutable/assets/_layout.DDjelS9U.css"
     ]
   },
   "src/routes/+layout.ts": {
@@ -257,7 +257,8 @@
       "_book-open.js",
       "_code-2.js",
       "_zap.js",
-      "_trophy.js"
+      "_trophy.js",
+      "_play.js"
     ]
   },
   "src/routes/achievements/+page.svelte": {
