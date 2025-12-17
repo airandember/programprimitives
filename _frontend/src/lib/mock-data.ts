@@ -490,14 +490,8 @@ export const mockMastery: MasteryLevel[] = [
 	{ primitiveId: 'objects', primitiveName: 'Objects', language: 'javascript', level: 1, exercisesCompleted: 1, exercisesAvailable: 6, averageScore: 72 }
 ];
 
-// Mock user for when not authenticated
-export const mockUser = {
-	id: 'demo-user',
-	email: 'demo@programprimitives.com',
-	displayName: 'Demo User',
-	preferredLanguage: 'javascript',
-	subscriptionTier: 'free' as const
-};
+// NOTE: mockUser removed - auth is now handled by the auth braid
+// See: braids/auth/frontend/stores/auth.ts
 
 // Helper to get exercises for a primitive
 export function getExercisesForPrimitive(primitiveId: string): Exercise[] {

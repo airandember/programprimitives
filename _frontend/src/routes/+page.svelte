@@ -99,7 +99,7 @@
 				<!-- Headline -->
 				<h1 class="text-5xl sm:text-6xl lg:text-7xl font-display font-bold tracking-tight mb-6 animate-fade-in">
 					Master the
-					<span class="text-gradient block sm:inline">Physics of Code</span>
+					<span class="text-gradient block sm:inline">Tools of Code</span>
 				</h1>
 
 				<p class="text-lg sm:text-xl text-surface-400 max-w-2xl mx-auto mb-10 animate-fade-in stagger-1">
