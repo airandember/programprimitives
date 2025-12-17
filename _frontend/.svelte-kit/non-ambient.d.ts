@@ -45,6 +45,6 @@ declare module "$app/types" {
 		};
 		Pathname(): "/" | "/achievements" | "/achievements/" | "/dashboard" | "/dashboard/" | "/learn" | "/learn/" | `/learn/${string}` & {} | `/learn/${string}/` & {} | "/practice" | "/practice/" | `/practice/${string}` & {} | `/practice/${string}/` & {} | `/practice/${string}/${string}` & {} | `/practice/${string}/${string}/` & {};
 		ResolvedPathname(): `${"" | `/${string}`}${ReturnType<AppTypes['Pathname']>}`;
-		Asset(): "/favicon.svg" | string & {};
+		Asset(): "/favicon.svg" | "/LOGO_dark.png" | "/LOGO_dark.webp" | "/LOGO_light.png" | "/LOGO_light.webp" | string & {};
 	}
 }

@@ -2,6 +2,7 @@
 # Dependencies
 # ===================
 node_modules/
+_frontend/braids/node_modules/
 .pnpm-store/
 
 # ===================
