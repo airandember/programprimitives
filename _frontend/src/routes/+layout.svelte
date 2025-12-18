@@ -23,19 +23,23 @@
 
 	let mobileMenuOpen = false;
 
-	const navItems = [
+	// Public nav items (always visible)
+	const publicNavItems = [
 		{ href: '/', label: 'Home', icon: Home },
 		{ href: '/learn', label: 'Learn', icon: BookOpen },
 		{ href: '/practice', label: 'Practice', icon: Code2 },
+	];
+
+	// Auth-only nav items (visible when logged in)
+	const authNavItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
 		{ href: '/achievements', label: 'Achievements', icon: Trophy },
 	];
 
-	// Secondary nav (shown in user dropdown)
-	const secondaryNav = [
-		{ href: '/settings', label: 'Settings' },
-		{ href: '/pricing', label: 'Pricing' },
-	];
+	// Combine nav items based on auth state
+	$: navItems = $isAuthenticated 
+		? [...publicNavItems, ...authNavItems]
+		: publicNavItems;
 
 	function isActive(href: string): boolean {
 		if (href === '/') return $page.url.pathname === '/';
