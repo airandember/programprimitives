@@ -43,7 +43,7 @@
 		FREE_ZONE_CONFIG,
 		FREE_EXERCISES,
 	} from '@braids/free-zone/frontend/stores/free-zone';
-	import SignupPrompt from '@braids/free-zone/frontend/components/SignupPrompt.svelte';
+	import SignupPrompt from '$lib/components/free-zone/SignupPrompt.svelte';
 
 	$: exerciseId = $page.params.exercise;
 	$: primitiveId = $page.params.primitive;

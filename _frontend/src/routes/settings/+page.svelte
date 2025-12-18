@@ -76,20 +76,20 @@
 				<h2 class="text-xl font-semibold">Profile</h2>
 			</div>
 
-			<div class="space-y-4">
-				<div>
-					<label class="block text-sm text-surface-500 mb-1">Email</label>
-					<div class="text-surface-200">{$user?.email}</div>
-				</div>
-				<div>
-					<label class="block text-sm text-surface-500 mb-1">Display Name</label>
-					<div class="text-surface-200">{$user?.displayName || 'Not set'}</div>
-				</div>
-				<div>
-					<label class="block text-sm text-surface-500 mb-1">Member Since</label>
-					<div class="text-surface-200">{$user?.createdAt ? formatDate($user.createdAt) : 'N/A'}</div>
-				</div>
+		<div class="space-y-4">
+			<div>
+				<span class="block text-sm text-surface-500 mb-1">Email</span>
+				<div class="text-surface-200">{$user?.email}</div>
 			</div>
+			<div>
+				<span class="block text-sm text-surface-500 mb-1">Display Name</span>
+				<div class="text-surface-200">{$user?.displayName || 'Not set'}</div>
+			</div>
+			<div>
+				<span class="block text-sm text-surface-500 mb-1">Member Since</span>
+				<div class="text-surface-200">{$user?.createdAt ? formatDate($user.createdAt) : 'N/A'}</div>
+			</div>
+		</div>
 		</section>
 
 		<!-- Subscription Section -->
