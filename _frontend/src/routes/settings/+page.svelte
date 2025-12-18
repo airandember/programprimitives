@@ -2,7 +2,7 @@
 	import { 
 		User, CreditCard, Bell, Shield, LogOut, 
 		Check, Crown, Star, ChevronRight, Calendar, 
-		ExternalLink, AlertTriangle
+		ExternalLink, AlertTriangle, Lock, LogIn, Settings
 	} from 'lucide-svelte';
 	import { user, isAuthenticated, logout } from '$lib/stores/auth';
 	import { 
@@ -42,6 +42,29 @@
 	<title>Settings | ProgramPrimitives</title>
 </svelte:head>
 
+{#if !$isAuthenticated}
+	<!-- Auth Required -->
+	<div class="min-h-screen flex items-center justify-center py-12">
+		<div class="max-w-md mx-auto px-4 text-center">
+			<div class="w-20 h-20 rounded-full bg-gradient-to-br from-surface-500/20 to-surface-600/20 flex items-center justify-center mx-auto mb-6">
+				<Settings size={40} class="text-surface-400" />
+			</div>
+			<h1 class="text-3xl font-display font-bold mb-4">Sign in to access Settings</h1>
+			<p class="text-surface-400 mb-8">
+				Manage your account, subscription, and preferences.
+			</p>
+			<div class="flex flex-col sm:flex-row gap-3 justify-center">
+				<a href="/login" class="btn btn-primary">
+					<LogIn size={18} />
+					Sign In
+				</a>
+				<a href="/register" class="btn btn-secondary">
+					Create Account
+				</a>
+			</div>
+		</div>
+	</div>
+{:else}
 <div class="min-h-screen py-12">
 	<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 		<h1 class="text-3xl font-display font-bold mb-8">Settings</h1>
@@ -53,25 +76,20 @@
 				<h2 class="text-xl font-semibold">Profile</h2>
 			</div>
 
-			{#if $user}
-				<div class="space-y-4">
-					<div>
-						<label class="block text-sm text-surface-500 mb-1">Email</label>
-						<div class="text-surface-200">{$user.email}</div>
-					</div>
-					<div>
-						<label class="block text-sm text-surface-500 mb-1">Display Name</label>
-						<div class="text-surface-200">{$user.displayName || 'Not set'}</div>
-					</div>
-					<div>
-						<label class="block text-sm text-surface-500 mb-1">Member Since</label>
-						<div class="text-surface-200">{formatDate($user.createdAt)}</div>
-					</div>
+			<div class="space-y-4">
+				<div>
+					<label class="block text-sm text-surface-500 mb-1">Email</label>
+					<div class="text-surface-200">{$user?.email}</div>
 				</div>
-			{:else}
-				<p class="text-surface-400">Please log in to view profile settings.</p>
-				<a href="/login" class="btn btn-primary mt-4">Log In</a>
-			{/if}
+				<div>
+					<label class="block text-sm text-surface-500 mb-1">Display Name</label>
+					<div class="text-surface-200">{$user?.displayName || 'Not set'}</div>
+				</div>
+				<div>
+					<label class="block text-sm text-surface-500 mb-1">Member Since</label>
+					<div class="text-surface-200">{$user?.createdAt ? formatDate($user.createdAt) : 'N/A'}</div>
+				</div>
+			</div>
 		</section>
 
 		<!-- Subscription Section -->
@@ -233,17 +251,16 @@
 		</section>
 
 		<!-- Logout -->
-		{#if $isAuthenticated}
-			<button 
-				on:click={handleLogout}
-				class="btn btn-ghost text-red-400 hover:bg-red-500/10 w-full justify-center"
-			>
-				<LogOut size={18} />
-				Log Out
-			</button>
-		{/if}
+		<button 
+			on:click={handleLogout}
+			class="btn btn-ghost text-red-400 hover:bg-red-500/10 w-full justify-center"
+		>
+			<LogOut size={18} />
+			Log Out
+		</button>
 	</div>
 </div>
+{/if}
 
 <style>
 	.toggle {
