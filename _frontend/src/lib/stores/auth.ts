@@ -1,13 +1,11 @@
 // ============================================
-// Auth Store - Re-exports from auth braid
+// Auth Store - Re-exports from local auth store
 // ============================================
 // 
-// This file re-exports the auth store from the auth braid.
 // Components should import from here for consistent paths:
 //   import { user, login, logout } from '$lib/stores/auth';
 //
 
-// Re-export everything from the auth braid store
 export {
 	user,
 	isLoading,
@@ -24,4 +22,4 @@ export {
 	resetPassword,
 	clearError,
 	updateUser,
-} from '@braids/auth/frontend/stores/auth';
+} from './auth-store';

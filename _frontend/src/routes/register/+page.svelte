@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { isAuthenticated } from '$lib/stores/auth';
-	import RegisterForm from '@braids/auth/frontend/components/RegisterForm.svelte';
+	import { RegisterForm } from '$lib/components/auth';
 	
 	// Redirect if already logged in
 	$: if ($isAuthenticated) {

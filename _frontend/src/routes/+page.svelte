@@ -122,9 +122,9 @@
 
 				<!-- CTA Buttons -->
 				<div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in stagger-3">
-					<a href="/register" class="btn btn-primary text-lg px-8 py-3.5 shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-shadow">
-						Start Learning Free
-						<ArrowRight size={20} />
+					<a href="/try" class="btn btn-primary text-lg px-8 py-3.5 shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-shadow">
+						<Play size={20} />
+						Try It Now — Free
 					</a>
 					<a href="/learn" class="btn btn-secondary text-lg px-8 py-3.5">
 						<BookOpen size={20} />

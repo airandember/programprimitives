@@ -7,16 +7,17 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@braids': path.resolve(__dirname, '../braids'),
-			// Ensure packages resolve from frontend's node_modules when imported from braids
-			'zod': path.resolve(__dirname, 'node_modules/zod'),
-			'svelte': path.resolve(__dirname, 'node_modules/svelte'),
-			'svelte/store': path.resolve(__dirname, 'node_modules/svelte/store'),
-			'svelte/transition': path.resolve(__dirname, 'node_modules/svelte/transition'),
-		}
+		},
+		// Ensure braids folder can find node_modules
+		dedupe: ['svelte', 'zod'],
 	},
 	server: {
 		port: 5173,
-		strictPort: false
-	}
+		strictPort: false,
+		fs: {
+			// Allow serving files from braids folder
+			allow: ['..'],
+		},
+	},
 });
 

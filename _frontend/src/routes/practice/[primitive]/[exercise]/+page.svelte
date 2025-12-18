@@ -15,32 +15,37 @@
 	} from 'lucide-svelte';
 	import {
 		currentExercise,
-		userCode,
-		output,
+		currentCode,
+		currentLanguage,
 		testResults,
+		runOutput,
 		isRunning,
-		isSubmitting,
-		hintsUsed,
-		currentHint,
-		availableHints,
-		showSuccess,
+		visibleHints,
+		canRevealMoreHints,
+		allTestsPassed,
 		loadExercise,
+		setLanguage,
+		updateCode,
+		revealHint,
 		runCode,
 		submitSolution,
-		getHint,
 		resetExercise,
-		updateCode
 	} from '$lib/stores/exercises';
-	import { selectedLanguage, supportedLanguages } from '$lib/stores/primitives';
-	import { getPrimitiveById } from '$lib/mock-data';
+	import { getPrimitive, selectedLanguage } from '$lib/stores/primitives';
+	import { SUPPORTED_LANGUAGES } from '@braids/core/constants';
 
 	$: exerciseId = $page.params.exercise;
 	$: primitiveId = $page.params.primitive;
-	$: primitive = getPrimitiveById(primitiveId);
+	$: primitive = getPrimitive(primitiveId);
+
+	let showSuccess = false;
 
 	onMount(() => {
 		loadExercise(exerciseId);
 	});
+
+	// Sync language with primitives store
+	$: setLanguage($selectedLanguage);
 
 	let editorElement: HTMLTextAreaElement;
 
@@ -50,7 +55,7 @@
 			event.preventDefault();
 			const start = editorElement.selectionStart;
 			const end = editorElement.selectionEnd;
-			const value = $userCode;
+			const value = $currentCode;
 			updateCode(value.substring(0, start) + '  ' + value.substring(end));
 			// Set cursor position after indent
 			setTimeout(() => {
@@ -68,7 +73,29 @@
 		const target = event.target as HTMLTextAreaElement;
 		updateCode(target.value);
 	}
+
+	async function handleSubmit() {
+		const result = await submitSolution();
+		if (result.success) {
+			showSuccess = true;
+		}
+	}
+
+	function getFileExtension(lang: string): string {
+		const extensions: Record<string, string> = {
+			javascript: 'js',
+			typescript: 'ts',
+			python: 'py',
+			go: 'go',
+			cpp: 'cpp',
+		};
+		return extensions[lang] || 'txt';
+	}
 </script>
+
+<svelte:head>
+	<title>{$currentExercise?.title || 'Exercise'} | ProgramPrimitives</title>
+</svelte:head>
 
 {#if $currentExercise}
 	<div class="min-h-screen flex flex-col">
@@ -83,7 +110,10 @@
 						<ArrowLeft size={20} />
 					</a>
 					<div>
-						<div class="text-sm text-surface-500">{primitive?.name || primitiveId}</div>
+						<div class="text-sm text-surface-500 flex items-center gap-2">
+							<span>{primitive?.icon}</span>
+							{primitive?.name || primitiveId}
+						</div>
 						<h1 class="font-semibold">{$currentExercise.title}</h1>
 					</div>
 				</div>
@@ -91,7 +121,7 @@
 				<div class="flex items-center gap-3">
 					<!-- Language selector -->
 					<select bind:value={$selectedLanguage} class="input py-1.5 text-sm w-36">
-						{#each supportedLanguages.slice(0, 3) as lang}
+						{#each SUPPORTED_LANGUAGES.slice(0, 3) as lang}
 							<option value={lang.id}>{lang.icon} {lang.name}</option>
 						{/each}
 					</select>
@@ -134,25 +164,29 @@
 								<Lightbulb size={18} class="text-yellow-500" />
 								Hints
 							</h3>
-							<span class="text-sm text-surface-500">{$availableHints} remaining</span>
+							<span class="text-sm text-surface-500">
+								{$visibleHints.length}/{$currentExercise.hints.length} used
+							</span>
 						</div>
 
-						{#if $currentHint}
-							<div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-								<p class="text-sm text-yellow-200">{$currentHint}</p>
+						<!-- Show revealed hints -->
+						{#each $visibleHints as hint, i}
+							<div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-3">
+								<div class="text-xs text-yellow-400 mb-1">Hint {i + 1}</div>
+								<p class="text-sm text-yellow-200">{hint}</p>
 							</div>
-						{/if}
+						{/each}
 
 						<button
-							on:click={() => getHint()}
-							disabled={$availableHints === 0}
+							on:click={() => revealHint()}
+							disabled={!$canRevealMoreHints}
 							class="btn btn-secondary w-full justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<Lightbulb size={16} />
-							{$availableHints > 0 ? 'Get a Hint' : 'No more hints'}
+							{$canRevealMoreHints ? 'Get a Hint' : 'No more hints'}
 						</button>
 
-						{#if $hintsUsed > 0}
+						{#if $visibleHints.length > 0}
 							<p class="text-xs text-surface-500 mt-2 text-center">
 								Using hints reduces your score (-10% per hint)
 							</p>
@@ -169,11 +203,13 @@
 						<div class="w-3 h-3 rounded-full bg-red-500"></div>
 						<div class="w-3 h-3 rounded-full bg-yellow-500"></div>
 						<div class="w-3 h-3 rounded-full bg-green-500"></div>
-						<span class="ml-2 text-surface-500 text-sm">solution.{$selectedLanguage === 'python' ? 'py' : 'js'}</span>
+						<span class="ml-2 text-surface-500 text-sm">
+							solution.{getFileExtension($currentLanguage)}
+						</span>
 					</div>
 
 					<div class="flex items-center gap-2">
-						<button on:click={resetExercise} class="btn btn-ghost text-sm py-1" title="Reset code">
+						<button on:click={() => resetExercise()} class="btn btn-ghost text-sm py-1" title="Reset code">
 							<RotateCcw size={16} />
 							Reset
 						</button>
@@ -184,7 +220,7 @@
 				<div class="flex-1 bg-surface-950 relative overflow-hidden">
 					<textarea
 						bind:this={editorElement}
-						value={$userCode}
+						value={$currentCode}
 						on:input={handleInput}
 						on:keydown={handleKeyDown}
 						spellcheck="false"
@@ -202,7 +238,7 @@
 
 					<div class="flex items-center gap-3">
 						<button
-							on:click={runCode}
+							on:click={() => runCode()}
 							disabled={$isRunning}
 							class="btn btn-secondary"
 						>
@@ -215,11 +251,11 @@
 						</button>
 
 						<button
-							on:click={submitSolution}
-							disabled={$isSubmitting}
+							on:click={handleSubmit}
+							disabled={$isRunning}
 							class="btn btn-primary"
 						>
-							{#if $isSubmitting}
+							{#if $isRunning}
 								<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
 							{:else}
 								<Send size={18} />
@@ -238,15 +274,18 @@
 						<h3 class="font-semibold">Output</h3>
 					</div>
 					<div class="flex-1 overflow-y-auto p-4">
-						<pre class="font-mono text-sm text-surface-300 whitespace-pre-wrap">{$output || 'Run your code to see output...'}</pre>
+						<pre class="font-mono text-sm text-surface-300 whitespace-pre-wrap">{$runOutput || 'Run your code to see output...'}</pre>
 					</div>
 				</div>
 
 				<!-- Test Results -->
 				{#if $testResults.length > 0}
 					<div class="border-t border-surface-800">
-						<div class="px-4 py-3 border-b border-surface-800">
+						<div class="px-4 py-3 border-b border-surface-800 flex items-center justify-between">
 							<h3 class="font-semibold">Test Results</h3>
+							<span class="text-sm {$allTestsPassed ? 'text-primary-400' : 'text-surface-500'}">
+								{$testResults.filter(r => r.passed).length}/{$testResults.length} passed
+							</span>
 						</div>
 						<div class="p-4 space-y-2 max-h-64 overflow-y-auto">
 							{#each $testResults as result}
@@ -262,9 +301,14 @@
 									{/if}
 									<div class="flex-1 min-w-0">
 										<div class="font-medium text-sm">{result.name}</div>
-										{#if result.message}
-											<div class="text-xs text-surface-500 truncate">{result.message}</div>
+										{#if !result.passed}
+											<div class="text-xs text-surface-500 mt-1">
+												Expected: <code class="text-primary-400">{result.expected}</code>
+											</div>
 										{/if}
+									</div>
+									<div class="text-xs text-surface-500">
+										{result.executionTimeMs}ms
 									</div>
 								</div>
 							{/each}
@@ -275,7 +319,7 @@
 		</div>
 
 		<!-- Success Modal -->
-		{#if $showSuccess}
+		{#if showSuccess}
 			<div class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
 				<div class="card p-8 max-w-md mx-4 text-center animate-slide-up">
 					<div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mx-auto mb-6">
@@ -286,18 +330,20 @@
 
 					<div class="flex items-center justify-center gap-8 mb-8">
 						<div>
-							<div class="text-3xl font-bold text-primary-400">+25</div>
+							<div class="text-3xl font-bold text-primary-400">+{$currentExercise.difficulty * 25}</div>
 							<div class="text-sm text-surface-500">XP Earned</div>
 						</div>
 						<div>
-							<div class="text-3xl font-bold text-accent-400">95%</div>
+							<div class="text-3xl font-bold text-accent-400">
+								{100 - ($visibleHints.length * 10)}%
+							</div>
 							<div class="text-sm text-surface-500">Score</div>
 						</div>
 					</div>
 
 					<div class="flex gap-3">
 						<button
-							on:click={() => showSuccess.set(false)}
+							on:click={() => showSuccess = false}
 							class="btn btn-secondary flex-1 justify-center"
 						>
 							Review Solution
@@ -319,4 +365,3 @@
 		</div>
 	</div>
 {/if}
-

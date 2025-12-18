@@ -58,6 +58,9 @@ export const Languages: Record<Language, LanguageInfo> = {
 
 export const LanguageList = Object.values(Languages);
 
+/** Alias for LanguageList - commonly used in UI */
+export const SUPPORTED_LANGUAGES = LanguageList;
+
 export const DefaultLanguage: Language = 'javascript';
 
 /**

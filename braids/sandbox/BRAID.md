@@ -1,177 +1,270 @@
 # SANDBOX Braid
 
 ## Purpose
-Provides secure code execution for user-submitted code. This is the engine that runs exercises and validates solutions.
+Secure code execution engine that runs user-submitted code in isolated environments, validates solutions against test cases, and returns results.
+
+## Core Philosophy
+> **Execute safely, validate thoroughly, respond quickly.**
+> 
+> User code is untrusted. We sandbox everything, enforce timeouts, limit resources, and never trust output until validated.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      SANDBOX SERVICE                        │
+├─────────────────────────────────────────────────────────────┤
+│  Request → Validate → Execute → Test → Score → Response     │
+│                                                             │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
+│  │ Input   │→ │ Runner  │→ │ Tester  │→ │ Scorer  │        │
+│  │ Sanity  │  │ JS/Py/Go│  │ Compare │  │ Points  │        │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Scope
-- Secure code execution
-- Multi-language runtime support
-- Resource limiting (time, memory)
-- Input/output handling
-- Error capture and formatting
+- Code execution in multiple languages (JS, Python, Go)
+- Secure sandboxing with resource limits
+- Test case validation
+- Output capture (stdout, stderr)
+- Timeout enforcement
+- Error detection and categorization
+- Score calculation
 
-## Dependencies
-- **External**: 
-  - Cloudflare Workers (execution environment)
-  - Language runtimes (QuickJS for JS, Pyodide for Python, etc.)
-- **Internal**: 
-  - core (types)
-  - exercises (test cases)
+## Security Model
 
-## Current Status
-- [ ] JavaScript runner (QuickJS)
-- [ ] Python runner (Pyodide)
-- [ ] Go runner (Phase 2)
-- [ ] Security sandbox
-- [ ] Resource limits
-- [ ] Output parsing
-- [ ] Error formatting
-- [ ] API endpoints
+### Execution Constraints
+| Constraint | Limit | Reason |
+|------------|-------|--------|
+| Timeout | 5 seconds | Prevent infinite loops |
+| Memory | 128 MB | Prevent memory bombs |
+| Output | 10 KB | Prevent log floods |
+| Network | Disabled | Prevent exfiltration |
+| Filesystem | Disabled | Prevent persistence |
+| Subprocess | Disabled | Prevent escape |
 
-## Strands
+### Code Sanitization
+- No `eval()` or `exec()` with user input
+- No `import os`, `subprocess`, `sys.exit()`
+- No network APIs (`fetch`, `requests`, `http`)
+- No file system APIs (`fs`, `open()`, `os.path`)
 
-### 1. runner
-Code execution engine
-- Language-specific runtime
-- Timeout handling
-- Memory limits
-- Output capture
+## Supported Languages
 
-### 2. security
-Sandbox isolation
-- Block network access
-- Block file system
-- Block dangerous APIs
-- Input sanitization
+### JavaScript (Node.js style)
+```javascript
+// Allowed: console.log, Math, Array, Object, String, etc.
+// Blocked: require, import, fetch, process, fs
+```
 
-### 3. languages
-Runtime configuration
-- JavaScript (QuickJS in Workers)
-- Python (Pyodide WASM)
-- Go (TinyGo WASM - Phase 2)
+### Python
+```python
+# Allowed: print, len, range, list, dict, str, math
+# Blocked: import os, subprocess, open, exec, eval
+```
 
-### 4. output
-Result handling
-- stdout/stderr capture
-- Error formatting
-- Execution time
-- Memory usage
+### Go
+```go
+// Allowed: fmt, math, strings, strconv
+// Blocked: os, net, io/ioutil, exec
+```
 
 ## API Endpoints
 
-```
-POST   /api/sandbox/run            - Execute code
-GET    /api/sandbox/languages      - Available languages
-GET    /api/sandbox/status         - Health check
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sandbox/run` | Execute code, return output |
+| `POST` | `/api/sandbox/test` | Run code against test cases |
+| `POST` | `/api/sandbox/submit` | Submit for scoring |
 
-## Execution Flow
+## Request/Response Types
 
-```
-User Code
-    │
-    ▼
-┌───────────────┐
-│  Validation   │  - Check syntax
-│               │  - Check length
-│               │  - Sanitize input
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│   Runtime     │  - QuickJS (JS)
-│   Selection   │  - Pyodide (Python)
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│   Sandbox     │  - Isolated VM
-│   Execution   │  - Resource limits
-│               │  - Timeout: 5s
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│   Test Case   │  - Run against inputs
-│   Validation  │  - Compare outputs
-└───────┬───────┘
-        │
-        ▼
-    Results
-```
-
-## Security Constraints
-
-```javascript
-// Blocked APIs (JavaScript)
-const BLOCKED = [
-    'fetch',
-    'XMLHttpRequest',
-    'WebSocket',
-    'eval',
-    'Function',
-    'require',
-    'import',
-    'process',
-    '__dirname',
-    '__filename'
-];
-
-// Resource Limits
-const LIMITS = {
-    timeout_ms: 5000,
-    memory_mb: 64,
-    output_bytes: 65536,
-    stack_size_kb: 256
-};
-```
-
-## Request/Response
-
-### Run Code Request
+### Run Code
 ```typescript
-interface RunCodeRequest {
-    exerciseId?: string;     // Optional, for tracking
-    language: Language;
-    code: string;
-    input?: string;          // stdin
+// POST /api/sandbox/run
+interface RunRequest {
+  code: string;
+  language: 'javascript' | 'python' | 'go';
+  input?: string;  // stdin input
+}
+
+interface RunResponse {
+  success: boolean;
+  output: string;    // stdout
+  error?: string;    // stderr or runtime error
+  executionMs: number;
 }
 ```
 
-### Run Code Response
+### Test Code
 ```typescript
-interface RunCodeResponse {
-    success: boolean;
-    output: string;          // stdout
-    error?: string;          // stderr or error message
-    executionTimeMs: number;
-    memoryUsedKb?: number;
+// POST /api/sandbox/test
+interface TestRequest {
+  code: string;
+  language: 'javascript' | 'python' | 'go';
+  exerciseId: string;
+}
+
+interface TestResponse {
+  success: boolean;
+  passed: number;
+  failed: number;
+  results: TestResult[];
+  executionMs: number;
+}
+
+interface TestResult {
+  name: string;
+  passed: boolean;
+  expected?: string;
+  actual?: string;
+  message?: string;
 }
 ```
 
-### Validate Solution Request
+### Submit Solution
 ```typescript
-interface ValidateRequest {
-    exerciseId: string;
-    language: Language;
-    code: string;
+// POST /api/sandbox/submit
+interface SubmitRequest {
+  code: string;
+  language: 'javascript' | 'python' | 'go';
+  exerciseId: string;
+  hintsUsed: number;
+  timeSpentSeconds: number;
+}
+
+interface SubmitResponse {
+  success: boolean;
+  score: number;        // 0-100
+  passed: boolean;
+  testResults: TestResult[];
+  xpEarned: number;
+  achievements?: string[];  // Newly unlocked
+  feedback?: string;    // AI-generated feedback
 }
 ```
 
-### Validate Solution Response
+## Execution Strategies
+
+### Strategy 1: Client-Side Execution (Current)
+For JavaScript, we can execute directly in the browser using Web Workers with strict CSP:
+
 ```typescript
-interface ValidateResponse {
-    passed: boolean;
-    score: number;
-    testResults: {
-        testId: string;
-        name: string;
-        passed: boolean;
-        expected?: string;
-        actual?: string;
-        error?: string;
-        timeMs: number;
-    }[];
+// Browser-based JS execution
+const worker = new Worker('sandbox-worker.js');
+worker.postMessage({ code, input });
+worker.onmessage = (e) => handleResult(e.data);
+setTimeout(() => worker.terminate(), 5000);
+```
+
+**Pros**: No server cost, instant feedback
+**Cons**: Only JS, can't fully sandbox
+
+### Strategy 2: WASM Interpreters
+Use WebAssembly-compiled interpreters:
+- **Pyodide** for Python
+- **GopherJS** for Go
+
+**Pros**: Runs in browser securely
+**Cons**: Large bundle size, some limitations
+
+### Strategy 3: Backend Execution Service
+Dedicated execution service (future):
+- **Piston API** (open source)
+- **Judge0** (hosted service)
+- **Custom Docker containers**
+
+**Pros**: Full language support, real execution
+**Cons**: Cost, latency, infrastructure
+
+## Current Implementation
+
+### Phase 1: Simulated Execution ✅
+- Parse code and detect common patterns
+- Match against expected outputs
+- Provide realistic-looking results
+- Good for MVP and demo
+
+### Phase 2: Client-Side JS ✅
+- Real JavaScript execution in Web Workers
+- Sandboxed with CSP
+- Actual test validation
+
+### Phase 3: WASM Python (Planned)
+- Integrate Pyodide
+- Real Python execution
+- Memory-limited
+
+### Phase 4: Backend Service (Future)
+- Deploy Piston/Judge0
+- Real multi-language execution
+- Full test suite support
+
+## Test Case Format
+
+```typescript
+interface TestCase {
+  id: string;
+  name: string;
+  input: any;           // Function arguments or stdin
+  expected: any;        // Expected return value or stdout
+  hidden: boolean;      // Don't show to user
+  timeout: number;      // ms, default 1000
+  validator?: string;   // Custom validation function
 }
 ```
 
+## Scoring Algorithm
+
+```typescript
+function calculateScore(params: {
+  testsPassed: number;
+  totalTests: number;
+  hintsUsed: number;
+  timeSpentSeconds: number;
+  expectedMinutes: number;
+}): number {
+  // Base score from test pass rate
+  const passRate = testsPassed / totalTests;
+  let score = passRate * 100;
+  
+  // Hint penalty: -10% per hint, max -30%
+  const hintPenalty = Math.min(hintsUsed * 10, 30);
+  score -= hintPenalty;
+  
+  // Time bonus: +10% if under expected time
+  const expectedSeconds = expectedMinutes * 60;
+  if (timeSpentSeconds < expectedSeconds * 0.5) {
+    score += 10;
+  }
+  
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+```
+
+## Error Detection
+
+Categorize errors to help progress tracking:
+
+| Error Type | Detection | Example |
+|------------|-----------|---------|
+| `syntax` | Parse error | `SyntaxError: Unexpected token` |
+| `logic` | Wrong output | Expected 5, got 4 (off-by-one) |
+| `runtime` | Exception | `TypeError: undefined is not a function` |
+| `timeout` | Exceeded limit | Execution time > 5000ms |
+| `edge-case` | Hidden test fail | Empty array handling |
+
+## Current Status
+- [x] BRAID documentation
+- [x] Type definitions
+- [x] Sandbox worker (client-side JS)
+- [x] Test runner logic
+- [x] Score calculation
+- [x] Error categorization
+- [x] Frontend integration
+- [ ] Python WASM (Pyodide)
+- [ ] Backend execution service
+- [ ] Rate limiting
+
+## ✅ PILOT COMPLETE (Client-Side JS)

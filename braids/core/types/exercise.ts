@@ -5,7 +5,7 @@
 import type { Language } from './user';
 
 /**
- * Exercise entity
+ * Exercise entity (full)
  */
 export interface Exercise {
 	id: string;
@@ -21,19 +21,13 @@ export interface Exercise {
 	estimatedMinutes: number;
 	
 	// Content
-	instructions: string;                // Markdown
-	hints: string[];                     // Progressive hints
-	
-	// Ordering
-	sequenceOrder: number;
+	instructions: string;                     // Markdown
+	hints: string[];                          // Progressive hints
+	starterCode: Record<string, string>;      // Code per language
+	testCases: TestCase[];                    // Validation tests
 	
 	// Access
 	isPremium: boolean;
-	isPublished: boolean;
-	
-	// Timestamps
-	createdAt: string;
-	updatedAt: string;
 }
 
 /**
@@ -57,24 +51,6 @@ export interface ExerciseListItem {
 }
 
 /**
- * Exercise with full content for workspace
- */
-export interface ExerciseDetail extends Exercise {
-	starterCode: Record<Language, string>;
-	testCases: TestCase[];
-}
-
-/**
- * Starter code for a specific language
- */
-export interface ExerciseStarterCode {
-	exerciseId: string;
-	language: Language;
-	starterCode: string;
-	solutionCode: string;          // Hidden from users
-}
-
-/**
  * Test case for validation
  */
 export interface TestCase {
@@ -82,9 +58,8 @@ export interface TestCase {
 	name: string;
 	description?: string;
 	input: unknown;                 // JSON input
-	expectedOutput: unknown;        // JSON expected result
+	expected: unknown;              // JSON expected result
 	isHidden: boolean;              // Hidden from user
-	timeoutMs: number;
 }
 
 /**
@@ -94,9 +69,10 @@ export interface TestResult {
 	testCaseId: string;
 	name: string;
 	passed: boolean;
-	message?: string;
-	actualOutput?: unknown;
-	executionTimeMs?: number;
+	expected: string;
+	actual: string;
+	executionTimeMs: number;
+	error?: string;
 }
 
 // ============================================
@@ -155,4 +131,3 @@ export interface ExerciseQuery {
 	difficulty?: number;
 	completed?: boolean;
 }
-

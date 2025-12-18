@@ -367,15 +367,51 @@ Week 9-10: Conversion & Monetize
 
 ---
 
-## ✅ Ready to Start
+## ✅ Completed Braids
 
-Begin with **CORE** braid to establish:
-1. Shared TypeScript types
-2. API client wrapper
-3. Validation schemas
-4. Error handling patterns
+| Braid | Status | Frontend | Backend |
+|-------|--------|----------|---------|
+| **CORE** | ✅ Complete | Types, API client, validation, utils | Shared types |
+| **AUTH** | ✅ Complete | Login/Register forms, store | Go handlers, bcrypt |
+| **PRIMITIVES** | ✅ Complete | Catalog, detail pages, syntax | Data structures |
+| **EXERCISES** | ✅ Complete | Practice hub, workspace, tests | Data structures |
+| **FREE-ZONE** | ✅ Complete | /try routes, signup prompts | localStorage tracking |
+| **PROGRESS** | ✅ Complete | Dashboard, mastery, errors | - |
+| **GAMIFICATION** | ✅ Complete | Achievements, XP, badges | - |
+| **SANDBOX** | ✅ Complete | Client-side JS execution | Go handlers, security |
+| **SUBSCRIPTION** | ✅ Complete | Pricing, tiers, access control | Provider interface |
 
-Then move to **AUTH** braid to get users into the system.
+---
+
+## 🎯 What's Built
+
+### User Flows
+- ✅ Homepage with "Try Free" CTA
+- ✅ Free zone with limited exercises
+- ✅ Learn catalog with primitives
+- ✅ Primitive detail with syntax examples
+- ✅ Practice hub with exercises
+- ✅ Exercise workspace with code editor
+- ✅ Dashboard with progress tracking
+- ✅ Achievements page with badges
+- ✅ Login/Register with auth modal
+
+### Key Features
+- ✅ 13 primitives with full content
+- ✅ 20 exercises with test cases
+- ✅ Multi-language syntax (JS, Python, Go)
+- ✅ Error pattern detection & insights
+- ✅ XP system with levels
+- ✅ Achievement badges (17 total)
+- ✅ Daily challenges
+- ✅ Streak tracking
+- ✅ Mastery levels (0-5)
+- ✅ Secure code execution sandbox
+- ✅ Real JavaScript execution in browser
+- ✅ Security patterns blocking dangerous code
+- ✅ Payment-agnostic subscription system
+- ✅ Free/Premium/Pro tiers with feature gating
+- ✅ Pricing page with comparison table
 
 ---
 

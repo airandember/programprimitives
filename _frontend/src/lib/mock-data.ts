@@ -1,220 +1,24 @@
-// Mock data for development when backend is unavailable
+// ============================================
+// Mock Data - Temporary data for development
+// ============================================
+//
+// This file contains mock data for features that haven't been
+// fully implemented yet. Data is progressively removed as
+// real implementations are built.
+//
+// ✅ REMOVED: mockUser (see braids/auth)
+// ✅ REMOVED: mockPrimitives (see braids/primitives)
+// ⏳ TODO: mockExercises (will be in braids/exercises)
+// ⏳ TODO: mockAchievements (will be in braids/gamification)
+// ⏳ TODO: mockProgress (will be in braids/progress)
+// ⏳ TODO: mockMastery (will be in braids/progress)
+//
 
-import type { Primitive, Exercise, Achievement, UserProgress, MasteryLevel } from './types';
+import type { Exercise, Achievement, UserProgress, MasteryLevel } from './types';
 
-export const mockPrimitives: Primitive[] = [
-	{
-		id: 'variables',
-		name: 'Variables',
-		category: 'fundamentals',
-		subcategory: 'basics',
-		description: 'Named storage locations that hold data values',
-		whyItMatters: 'Variables are the foundation of all programming. They allow you to store, retrieve, and manipulate data.',
-		bestPractices: [
-			'Use descriptive names that indicate purpose',
-			'Follow naming conventions (camelCase, snake_case)',
-			'Initialize variables before use',
-			"Use const/final for values that won't change"
-		],
-		pitfalls: [
-			'Using single-letter names except for loop counters',
-			'Shadowing variables in nested scopes',
-			'Not initializing before use'
-		],
-		difficulty: 1,
-		icon: '📦',
-		isPremium: false
-	},
-	{
-		id: 'operators',
-		name: 'Operators',
-		category: 'fundamentals',
-		subcategory: 'basics',
-		description: 'Symbols that perform operations on values and variables',
-		whyItMatters: 'Operators let you manipulate data - from simple math to complex logical decisions.',
-		bestPractices: [
-			'Use parentheses for clarity in complex expressions',
-			'Understand operator precedence',
-			'Use === over == in JavaScript for type safety'
-		],
-		pitfalls: [
-			'Confusing = (assignment) with == (comparison)',
-			'Integer division truncation',
-			'Operator precedence mistakes'
-		],
-		difficulty: 1,
-		icon: '➕',
-		isPremium: false
-	},
-	{
-		id: 'conditionals',
-		name: 'Conditionals',
-		category: 'fundamentals',
-		subcategory: 'control-flow',
-		description: 'Execute different code based on whether conditions are true or false',
-		whyItMatters: "Conditionals let your program make decisions. They're how you handle different scenarios.",
-		bestPractices: [
-			'Keep conditions simple and readable',
-			'Use early returns to reduce nesting',
-			'Consider switch for multiple discrete values'
-		],
-		pitfalls: [
-			'Deeply nested if statements',
-			'Using == instead of === in JS',
-			'Not considering all edge cases'
-		],
-		difficulty: 1,
-		icon: '🔀',
-		isPremium: false
-	},
-	{
-		id: 'for-loop',
-		name: 'For Loop',
-		category: 'fundamentals',
-		subcategory: 'loops',
-		description: 'Execute code a specific number of times with a counter',
-		whyItMatters: "For loops are essential for processing collections and repeating operations. They're one of the most frequently used constructs.",
-		bestPractices: [
-			'Use meaningful iterator variable names',
-			'Avoid modifying loop variable inside the loop',
-			'Consider forEach/map for array iteration'
-		],
-		pitfalls: [
-			'Off-by-one errors (i <= n vs i < n)',
-			'Infinite loops when condition never false',
-			'Modifying array length while iterating'
-		],
-		difficulty: 2,
-		icon: '🔄',
-		isPremium: false
-	},
-	{
-		id: 'while-loop',
-		name: 'While Loop',
-		category: 'fundamentals',
-		subcategory: 'loops',
-		description: 'Execute code repeatedly while a condition remains true',
-		whyItMatters: "While loops are perfect when you don't know how many iterations you need.",
-		bestPractices: [
-			'Ensure the condition will eventually become false',
-			'Consider do-while when you need at least one iteration',
-			'Add safety limits for potentially infinite loops'
-		],
-		pitfalls: [
-			'Forgetting to update the condition variable',
-			'Creating infinite loops',
-			'Using while when for is clearer'
-		],
-		difficulty: 2,
-		icon: '🔁',
-		isPremium: false
-	},
-	{
-		id: 'functions',
-		name: 'Functions',
-		category: 'fundamentals',
-		subcategory: 'modularity',
-		description: 'Reusable blocks of code that perform specific tasks',
-		whyItMatters: 'Functions are the building blocks of organized code. They promote reuse and make complex programs manageable.',
-		bestPractices: [
-			'Single responsibility - one function, one job',
-			'Use descriptive names that indicate action',
-			'Keep functions short (under 20 lines ideal)'
-		],
-		pitfalls: [
-			'Functions that do too many things',
-			"Side effects that aren't obvious",
-			'Too many parameters'
-		],
-		difficulty: 2,
-		icon: '⚡',
-		isPremium: false
-	},
-	{
-		id: 'arrays',
-		name: 'Arrays',
-		category: 'data-structures',
-		subcategory: 'linear',
-		description: 'Ordered collections of elements accessed by index',
-		whyItMatters: "Arrays are fundamental for storing lists of data. They're used everywhere - from user lists to game scores.",
-		bestPractices: [
-			'Use meaningful variable names',
-			'Check bounds before accessing',
-			'Consider using array methods over manual loops'
-		],
-		pitfalls: [
-			'Index out of bounds errors',
-			"Mutating arrays when you shouldn't",
-			'Off-by-one with array length'
-		],
-		difficulty: 2,
-		icon: '📊',
-		isPremium: false
-	},
-	{
-		id: 'objects',
-		name: 'Objects / Dictionaries',
-		category: 'data-structures',
-		subcategory: 'associative',
-		description: 'Collections of key-value pairs for structured data',
-		whyItMatters: "Objects let you group related data together with meaningful names. They're essential for representing real-world entities.",
-		bestPractices: [
-			'Use descriptive key names',
-			'Keep objects focused on one concept',
-			'Consider immutability for shared state'
-		],
-		pitfalls: [
-			'Accessing non-existent keys',
-			'Mutating shared objects',
-			'Deep vs shallow copy confusion'
-		],
-		difficulty: 2,
-		icon: '🗂️',
-		isPremium: false
-	},
-	{
-		id: 'recursion',
-		name: 'Recursion',
-		category: 'advanced',
-		subcategory: 'patterns',
-		description: 'Functions that call themselves to solve problems',
-		whyItMatters: 'Recursion is powerful for solving problems that have self-similar subproblems, like tree traversal.',
-		bestPractices: [
-			'Always have a base case',
-			'Ensure progress toward base case',
-			'Consider tail recursion for optimization'
-		],
-		pitfalls: [
-			'Missing or wrong base case',
-			'Stack overflow from too many calls',
-			'Using recursion when iteration is simpler'
-		],
-		difficulty: 4,
-		icon: '🌀',
-		isPremium: true
-	},
-	{
-		id: 'async',
-		name: 'Async Programming',
-		category: 'advanced',
-		subcategory: 'concurrency',
-		description: 'Handle operations that take time without blocking',
-		whyItMatters: 'Modern apps need to handle network requests, file I/O, and user interactions without freezing.',
-		bestPractices: [
-			'Use async/await over raw promises',
-			'Handle errors with try/catch',
-			'Avoid callback hell'
-		],
-		pitfalls: [
-			'Forgetting await keyword',
-			'Unhandled promise rejections',
-			'Race conditions'
-		],
-		difficulty: 4,
-		icon: '⏳',
-		isPremium: true
-	}
-];
+// ============================================
+// Exercises (TODO: Move to braids/exercises)
+// ============================================
 
 export const mockExercises: Exercise[] = [
 	{
@@ -364,96 +168,11 @@ getGrade(45) → "F"
 		starterCode: 'function getGrade(score) {\n  // Your code here\n  \n}',
 		isPremium: false
 	},
-	{
-		id: 'ex-006',
-		primitiveId: 'functions',
-		title: 'Temperature Converter',
-		slug: 'temperature-converter',
-		description: 'Convert temperatures between Celsius and Fahrenheit',
-		difficulty: 2,
-		estimatedMinutes: 8,
-		instructions: `## Your Task
-
-Create two functions:
-- \`celsiusToFahrenheit(c)\` - converts Celsius to Fahrenheit
-- \`fahrenheitToCelsius(f)\` - converts Fahrenheit to Celsius
-
-### Formulas
-- F = (C × 9/5) + 32
-- C = (F - 32) × 5/9
-
-### Examples
-\`\`\`
-celsiusToFahrenheit(0)   → 32
-celsiusToFahrenheit(100) → 212
-fahrenheitToCelsius(32)  → 0
-fahrenheitToCelsius(212) → 100
-\`\`\``,
-		hints: [
-			'Apply the formula directly in your return statement',
-			'Be careful with the order of operations',
-			'Test with known values: 0°C = 32°F, 100°C = 212°F'
-		],
-		starterCode: 'function celsiusToFahrenheit(c) {\n  // Your code here\n}\n\nfunction fahrenheitToCelsius(f) {\n  // Your code here\n}',
-		isPremium: false
-	},
-	{
-		id: 'ex-007',
-		primitiveId: 'arrays',
-		title: 'Find Maximum',
-		slug: 'find-maximum',
-		description: 'Find the largest number in an array',
-		difficulty: 2,
-		estimatedMinutes: 5,
-		instructions: `## Your Task
-
-Create a function \`findMax(arr)\` that returns the largest number in the array.
-
-### Requirements
-- Handle empty arrays (return null or undefined)
-- Don't use Math.max
-
-### Examples
-\`\`\`
-findMax([1, 5, 3, 9, 2]) → 9
-findMax([-5, -1, -10])   → -1
-findMax([42])            → 42
-\`\`\``,
-		hints: [
-			'Start by assuming the first element is the maximum',
-			'Loop through and compare each element',
-			'Update max when you find something larger'
-		],
-		starterCode: 'function findMax(arr) {\n  // Your code here\n  \n}',
-		isPremium: false
-	},
-	{
-		id: 'ex-008',
-		primitiveId: 'while-loop',
-		title: 'Countdown',
-		slug: 'countdown',
-		description: 'Create a countdown from n to 1',
-		difficulty: 2,
-		estimatedMinutes: 5,
-		instructions: `## Your Task
-
-Create a function \`countdown(n)\` that returns an array counting down from n to 1.
-
-### Examples
-\`\`\`
-countdown(5) → [5, 4, 3, 2, 1]
-countdown(3) → [3, 2, 1]
-countdown(1) → [1]
-\`\`\``,
-		hints: [
-			'Use a while loop that continues while n > 0',
-			'Push n to the array, then decrement n',
-			"Make sure you're adding numbers, not just modifying n"
-		],
-		starterCode: 'function countdown(n) {\n  // Your code here\n  \n}',
-		isPremium: false
-	}
 ];
+
+// ============================================
+// Achievements (TODO: Move to braids/gamification)
+// ============================================
 
 export const mockAchievements: Achievement[] = [
 	{ id: '1', name: 'First Steps', description: 'Complete your first exercise', category: 'milestone', icon: '👣', xpReward: 50, rarity: 'common', unlocked: true, unlockedAt: '2024-01-15' },
@@ -464,9 +183,11 @@ export const mockAchievements: Achievement[] = [
 	{ id: '6', name: 'Century Club', description: 'Complete 100 exercises', category: 'milestone', icon: '🏆', xpReward: 500, rarity: 'epic', unlocked: false },
 	{ id: '7', name: 'Polyglot', description: 'Use 3 different languages', category: 'skill', icon: '🌍', xpReward: 150, rarity: 'rare', unlocked: false },
 	{ id: '8', name: 'Perfect Score', description: 'Get 100% on first attempt', category: 'skill', icon: '💯', xpReward: 75, rarity: 'common', unlocked: true, unlockedAt: '2024-01-20' },
-	{ id: '9', name: 'Speed Demon', description: 'Complete exercise in under 1 minute', category: 'skill', icon: '⏱️', xpReward: 100, rarity: 'rare', unlocked: false },
-	{ id: '10', name: 'Year of Code', description: '365-day streak', category: 'consistency', icon: '🌟', xpReward: 2000, rarity: 'legendary', unlocked: false }
 ];
+
+// ============================================
+// Progress (TODO: Move to braids/progress)
+// ============================================
 
 export const mockProgress: UserProgress = {
 	totalExercisesCompleted: 23,
@@ -490,21 +211,16 @@ export const mockMastery: MasteryLevel[] = [
 	{ primitiveId: 'objects', primitiveName: 'Objects', language: 'javascript', level: 1, exercisesCompleted: 1, exercisesAvailable: 6, averageScore: 72 }
 ];
 
-// NOTE: mockUser removed - auth is now handled by the auth braid
-// See: braids/auth/frontend/stores/auth.ts
+// ============================================
+// Helper Functions
+// ============================================
 
-// Helper to get exercises for a primitive
+/** Get exercises for a primitive */
 export function getExercisesForPrimitive(primitiveId: string): Exercise[] {
 	return mockExercises.filter(e => e.primitiveId === primitiveId);
 }
 
-// Helper to get primitive by ID
-export function getPrimitiveById(id: string): Primitive | undefined {
-	return mockPrimitives.find(p => p.id === id);
-}
-
-// Helper to get mastery for a primitive
+/** Get mastery for a primitive in a language */
 export function getMasteryForPrimitive(primitiveId: string, language: string = 'javascript'): MasteryLevel | undefined {
 	return mockMastery.find(m => m.primitiveId === primitiveId && m.language === language);
 }
-

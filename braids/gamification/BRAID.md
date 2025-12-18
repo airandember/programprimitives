@@ -1,231 +1,143 @@
 # GAMIFICATION Braid
 
 ## Purpose
-Drives user engagement through XP, levels, achievements, leaderboards, and challenges. Makes learning addictive and rewarding.
+Make learning addictive (in a good way). Reward consistency, celebrate achievements, and create healthy competition through future leaderboards.
+
+## Core Philosophy
+> **Progress should feel rewarding.**
+> 
+> Every action earns something. Every milestone is celebrated. Every streak matters.
 
 ## Scope
-- XP and leveling system
-- Achievement unlocks
+- XP system with levels
+- Achievement badges
 - Daily/weekly challenges
-- Leaderboards
-- Notifications
+- Streak rewards
+- Future: Speed boards (fastest completions)
+- Future: Leaderboards (top learners)
+- Future: Social challenges
 
-## Dependencies
-- **External**: None
-- **Internal**: 
-  - core (types)
-  - auth (user context)
-  - progress (activity triggers)
-  - exercises (completion triggers)
+## XP System
+
+### Earning XP
+| Action | Base XP | Bonus |
+|--------|---------|-------|
+| Complete exercise | 50 | +5 per 10% score |
+| Attempt exercise | 10 | - |
+| Perfect score | 50 | 100 bonus |
+| First completion | 50 | 25 bonus |
+| Daily streak (7+) | - | 50 bonus |
+| Master primitive | - | 250 bonus |
+
+### Level Thresholds
+| Level | XP Required | Title |
+|-------|-------------|-------|
+| 1 | 0 | Novice |
+| 2 | 500 | Learner |
+| 3 | 1,000 | Practitioner |
+| 4 | 2,000 | Developer |
+| 5 | 3,500 | Skilled |
+| 6 | 5,500 | Advanced |
+| 7 | 8,000 | Expert |
+| 8 | 11,000 | Master |
+| 9 | 15,000 | Grandmaster |
+| 10 | 20,000 | Legend |
+
+## Achievements
+
+### Completion Badges
+- 🎯 **First Steps** - Complete first exercise
+- 🔥 **On Fire** - 5 exercises in one day
+- 🚀 **Speed Run** - 10 exercises in one day
+- 🏆 **Completionist** - All exercises in a primitive
+- 👑 **Master** - Level 5 mastery on any primitive
+- 🌟 **Polyglot** - Exercise in 3+ languages
+- 💎 **Perfectionist** - 5 perfect scores in a row
+
+### Streak Badges
+- 📆 **Week Warrior** - 7 day streak
+- 🗓️ **Monthly Master** - 30 day streak
+- 📅 **Century Club** - 100 day streak
+
+### Mastery Badges
+- 📚 **Scholar** - Master 3 primitives
+- 🎓 **Professor** - Master 6 primitives
+- 🧙 **Wizard** - Master 10 primitives
+
+### Special Badges
+- 🌅 **Early Bird** - Practice before 7am
+- 🦉 **Night Owl** - Practice after midnight
+- 💪 **Comeback Kid** - Return after 7+ day break
+- 🎭 **Versatile** - Practice in all categories
+
+## Future: Speed Boards
+
+Track fastest completion times:
+- Per exercise
+- Per primitive (all exercises)
+- Per category
+- Overall speedrun
+
+### Speed Tiers
+| Tier | Requirement |
+|------|-------------|
+| 🥉 Bronze | Top 50% |
+| 🥈 Silver | Top 25% |
+| 🥇 Gold | Top 10% |
+| 💎 Diamond | Top 1% |
+
+## Future: Leaderboards
+
+### Types
+- **Weekly** - Reset every Monday
+- **Monthly** - Reset on 1st
+- **All-Time** - Permanent rankings
+
+### Categories
+- Most XP earned
+- Highest accuracy
+- Longest streak
+- Most primitives mastered
+- Speed champions
+
+## Data Structure
+
+### Achievement
+```typescript
+{
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: 'completion' | 'streak' | 'mastery' | 'special';
+  requirement: {
+    type: string;
+    value: number;
+  };
+  xpReward: number;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+}
+```
+
+### UserAchievement
+```typescript
+{
+  achievementId: string;
+  unlockedAt: string;
+  progress: number;      // 0-100
+  isUnlocked: boolean;
+}
+```
 
 ## Current Status
-- [ ] Database schema
-- [ ] XP calculation
-- [ ] Level system
-- [ ] Achievement definitions
-- [ ] Achievement triggers
-- [ ] Leaderboard queries
-- [ ] Challenge system
-- [ ] Frontend achievements page
-- [ ] Notification system
+- [x] Data model defined
+- [x] Achievement catalog
+- [x] XP calculation
+- [x] Level system
+- [x] Achievement tracking store
+- [x] Badge display components
+- [ ] Speed tracking
+- [ ] Leaderboard backend
+- [ ] Social features
 
-## Strands
-
-### 1. xp
-Experience point system
-- XP for completions
-- Bonus multipliers
-- Level thresholds
-
-### 2. achievements
-Badge and unlock system
-- Define achievements
-- Check trigger conditions
-- Award on unlock
-- Notify user
-
-### 3. leaderboard
-Competitive rankings
-- Daily/weekly/monthly/all-time
-- By XP earned
-- Filter by friends (Phase 2)
-
-### 4. challenges
-Time-limited challenges
-- Daily challenge
-- Weekly challenge
-- Special events
-
-## API Endpoints
-
-```
-GET    /api/gamification/xp                       - XP info
-GET    /api/gamification/level                    - Level info
-GET    /api/gamification/achievements             - User achievements
-GET    /api/gamification/achievements/available   - Locked achievements
-POST   /api/gamification/achievements/:id/claim   - Claim reward
-GET    /api/gamification/leaderboard/:period      - Rankings
-GET    /api/gamification/challenges/daily         - Today's challenge
-GET    /api/gamification/challenges/weekly        - This week's
-POST   /api/gamification/challenges/:id/submit    - Submit entry
-```
-
-## Database Schema
-
-### achievements
-```sql
-CREATE TABLE achievements (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    category TEXT NOT NULL,
-    icon TEXT NOT NULL,
-    xp_reward INTEGER NOT NULL,
-    rarity TEXT NOT NULL,
-    trigger_condition TEXT NOT NULL,  -- JSON
-    is_secret INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL
-);
-```
-
-### user_achievements
-```sql
-CREATE TABLE user_achievements (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    achievement_id TEXT NOT NULL,
-    unlocked_at TEXT NOT NULL,
-    notified INTEGER DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (achievement_id) REFERENCES achievements(id),
-    UNIQUE(user_id, achievement_id)
-);
-```
-
-### challenges
-```sql
-CREATE TABLE challenges (
-    id TEXT PRIMARY KEY,
-    type TEXT NOT NULL,              -- daily, weekly, special
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    exercise_ids TEXT NOT NULL,      -- JSON array
-    primitive_id TEXT,
-    xp_reward INTEGER NOT NULL,
-    badge_id TEXT,
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    time_limit_minutes INTEGER,
-    is_active INTEGER DEFAULT 1,
-    created_at TEXT NOT NULL
-);
-```
-
-### user_challenges
-```sql
-CREATE TABLE user_challenges (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    challenge_id TEXT NOT NULL,
-    status TEXT NOT NULL,
-    exercises_completed TEXT,        -- JSON array
-    score INTEGER,
-    started_at TEXT,
-    completed_at TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (challenge_id) REFERENCES challenges(id),
-    UNIQUE(user_id, challenge_id)
-);
-```
-
-## Achievement Definitions
-
-### Milestone Achievements
-| ID | Name | Condition | XP | Rarity |
-|----|------|-----------|-----|--------|
-| first-blood | First Blood | Complete 1 exercise | 25 | Common |
-| getting-started | Getting Started | Complete 10 exercises | 100 | Common |
-| on-a-roll | On a Roll | Complete 50 exercises | 250 | Rare |
-| centurion | Centurion | Complete 100 exercises | 500 | Epic |
-| exercise-master | Exercise Master | Complete 500 exercises | 1000 | Legendary |
-
-### Consistency Achievements
-| ID | Name | Condition | XP | Rarity |
-|----|------|-----------|-----|--------|
-| first-week | First Week | 7-day streak | 100 | Common |
-| two-weeks | Two Weeks | 14-day streak | 200 | Rare |
-| monthly | Monthly | 30-day streak | 500 | Epic |
-| quarterly | Quarterly | 100-day streak | 1000 | Legendary |
-| yearly | Yearly | 365-day streak | 2500 | Legendary |
-
-### Skill Achievements
-| ID | Name | Condition | XP | Rarity |
-|----|------|-----------|-----|--------|
-| loop-master | Loop Master | Master all loop primitives | 300 | Rare |
-| array-wizard | Array Wizard | Master array operations | 300 | Rare |
-| polyglot | Polyglot | Use 3 languages | 200 | Rare |
-| hyperglot | Hyperglot | Use all languages | 500 | Epic |
-| perfectionist | Perfectionist | 5 perfect scores | 250 | Epic |
-| no-hints-hero | No Hints Hero | 10 exercises without hints | 300 | Epic |
-
-## Achievement Unlock Flow
-
-```
-Exercise Complete
-      │
-      ▼
-┌─────────────┐
-│ Check All   │
-│ Conditions  │
-└──────┬──────┘
-       │
-   ┌───┴───┐
-   │       │
-   ▼       ▼
-  No      Yes
-  │        │
-  │   ┌────┴────┐
-  │   │ Insert  │
-  │   │ Unlock  │
-  │   └────┬────┘
-  │        │
-  │   ┌────┴────┐
-  │   │ Award   │
-  │   │ XP      │
-  │   └────┬────┘
-  │        │
-  │   ┌────┴────┐
-  │   │ Notify  │
-  │   │ User    │
-  │   └─────────┘
-  │
-  ▼
-Done
-```
-
-## Achievements UI
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  🏆 Achievements                              12/42 Unlocked│
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Milestones                                     5/10 ━━━━━░ │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐           │
-│  │   ⭐    │ │   🎯    │ │   🔒    │ │   🔒    │           │
-│  │ First   │ │ Getting │ │ On a   │ │ Cent-  │           │
-│  │ Blood   │ │ Started │ │ Roll   │ │ urion  │           │
-│  │ ✓ Done  │ │ ✓ Done  │ │ 23/50  │ │ 23/100 │           │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘           │
-│                                                             │
-│  Consistency                                    2/5 ━━━░░░░ │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐           │
-│  │   🔥    │ │   📅    │ │   🔒    │ │   🔒    │           │
-│  │ First   │ │ Two     │ │ Monthly │ │ Quar-  │           │
-│  │ Week    │ │ Weeks   │ │         │ │ terly  │           │
-│  │ ✓ Done  │ │ ✓ Done  │ │ 14/30  │ │ 14/100 │           │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
+## ✅ PILOT COMPLETE (Core Features)

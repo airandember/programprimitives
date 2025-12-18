@@ -1,188 +1,89 @@
 # EXERCISES Braid
 
 ## Purpose
-Manages interactive coding exercises for practicing primitives. Each primitive has multiple exercises of varying difficulty that users complete to build mastery.
+The practice engine - coding exercises for each primitive with multi-language support, test runners, and progressive difficulty.
 
 ## Scope
-- Exercise catalog by primitive
-- Exercise workspace with code editor
-- Progressive hint system
-- Solution submission and validation
-- Test case execution
-- Exercise history and attempts
-
-## Dependencies
-- **External**: Monaco Editor (code editing)
-- **Internal**: 
-  - core (types)
-  - auth (user context)
-  - sandbox (code execution)
-  - primitives (linked content)
-  - progress (tracking completions)
-  - gamification (XP rewards)
-
-## Current Status
-- [ ] Database schema
-- [ ] Seed exercises
-- [ ] Catalog API
-- [ ] Detail API
-- [ ] Submit API
-- [ ] Hint API
-- [ ] Frontend catalog
-- [ ] Exercise workspace
-- [ ] Test result display
-- [ ] Success modal
+- Exercise definitions and starter code
+- Multi-language starter templates
+- Test cases and validation
+- Hint system
+- Code execution (sandbox)
+- Solution submission and scoring
 
 ## Strands
+1. **catalog** - List exercises by primitive
+2. **detail** - Exercise instructions and workspace
+3. **runner** - Code execution and testing
+4. **submission** - Save and score solutions
 
-### 1. catalog
-List exercises for a primitive
-- Filter by difficulty
-- Show completion status
-- Show estimated time
+## Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/exercises` | List exercises (with filtering) |
+| `GET` | `/api/exercises/:id` | Get exercise detail |
+| `POST` | `/api/exercises/:id/run` | Run code (no save) |
+| `POST` | `/api/exercises/:id/submit` | Submit solution |
+| `GET` | `/api/exercises/:id/hints` | Get hints (progressive) |
 
-### 2. workspace
-Interactive coding environment
-- Monaco Editor integration
-- Language switcher
-- Starter code loading
-- Run code button
-- Output display
+## Data Structure
 
-### 3. hints
-Progressive hint system
-- Multiple hint levels
-- Reveal on request
-- Score penalty for using hints
-
-### 4. submit
-Solution submission
-- Validate against test cases
-- Calculate score
-- Award XP
-- Update mastery
-- Check achievements
-
-### 5. history
-User's exercise history
-- Previous attempts
-- Best score
-- Time spent
-- Code snapshots
-
-## API Endpoints
-
-```
-GET    /api/exercises                          - List all
-GET    /api/exercises/:id                      - Get detail
-GET    /api/exercises/primitive/:primitiveId   - By primitive
-POST   /api/exercises/:id/start                - Start attempt
-GET    /api/exercises/:id/hints/:level         - Get hint
-POST   /api/exercises/:id/submit               - Submit solution
-GET    /api/exercises/:id/history              - User history
+### Exercise
+```typescript
+{
+  id: string;              // "ex-for-001"
+  primitiveId: string;     // "for-loop"
+  title: string;
+  slug: string;
+  description: string;
+  instructions: string;    // Markdown
+  difficulty: 1-5;
+  estimatedMinutes: number;
+  hints: string[];
+  starterCode: Record<Language, string>;
+  testCases: TestCase[];
+  isPremium: boolean;
+}
 ```
 
-## Database Schema
-
-### exercises
-```sql
-CREATE TABLE exercises (
-    id TEXT PRIMARY KEY,
-    primitive_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    slug TEXT NOT NULL,
-    description TEXT NOT NULL,
-    instructions TEXT NOT NULL,
-    hints TEXT NOT NULL,           -- JSON array
-    difficulty INTEGER DEFAULT 1,
-    estimated_minutes INTEGER DEFAULT 10,
-    sequence_order INTEGER DEFAULT 0,
-    is_premium INTEGER DEFAULT 0,
-    is_published INTEGER DEFAULT 1,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (primitive_id) REFERENCES primitives(id)
-);
+### TestCase
+```typescript
+{
+  id: string;
+  name: string;
+  input: any;
+  expected: any;
+  isHidden: boolean;      // Hidden tests for anti-cheat
+}
 ```
 
-### exercise_starter_code
-```sql
-CREATE TABLE exercise_starter_code (
-    id TEXT PRIMARY KEY,
-    exercise_id TEXT NOT NULL,
-    language TEXT NOT NULL,
-    starter_code TEXT NOT NULL,
-    solution_code TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id),
-    UNIQUE(exercise_id, language)
-);
+### Submission
+```typescript
+{
+  exerciseId: string;
+  userId: string;
+  language: string;
+  code: string;
+  passed: boolean;
+  score: number;          // 0-100
+  xpEarned: number;
+  executionTimeMs: number;
+}
 ```
 
-### exercise_test_cases
-```sql
-CREATE TABLE exercise_test_cases (
-    id TEXT PRIMARY KEY,
-    exercise_id TEXT NOT NULL,
-    name TEXT NOT NULL,
-    description TEXT,
-    input TEXT NOT NULL,           -- JSON
-    expected_output TEXT NOT NULL, -- JSON
-    is_hidden INTEGER DEFAULT 0,
-    timeout_ms INTEGER DEFAULT 5000,
-    sequence_order INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id)
-);
-```
+## Exercise Categories
+- **Fundamentals**: Basic exercises for each primitive
+- **Practice**: More exercises to build fluency
+- **Challenge**: Harder problems combining concepts
+- **Real-World**: Practical scenarios
 
-### exercise_submissions
-```sql
-CREATE TABLE exercise_submissions (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    exercise_id TEXT NOT NULL,
-    language TEXT NOT NULL,
-    submitted_code TEXT NOT NULL,
-    status TEXT NOT NULL,          -- passed, failed, error
-    score INTEGER,
-    hints_used INTEGER DEFAULT 0,
-    time_spent_seconds INTEGER,
-    test_results TEXT,             -- JSON
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (exercise_id) REFERENCES exercises(id)
-);
-```
+## Current Status
+- [x] Data model defined
+- [x] Seed data created (20+ exercises)
+- [x] Frontend stores
+- [ ] Code editor integration
+- [ ] Test runner (backend)
+- [ ] Sandbox execution
+- [ ] Solution persistence
 
-## Exercise Workspace UI
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Exercise: Print Numbers 1-10                    [JS ▼]    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Instructions                      │  Code Editor          │
-│  ─────────────                     │  ────────────         │
-│  Write a for loop that prints      │  function solution()  │
-│  numbers from 1 to 10.             │  {                    │
-│                                    │    // Your code here  │
-│  Expected Output:                  │  }                    │
-│  1                                 │                       │
-│  2                                 │                       │
-│  ...                               │                       │
-│  10                                │                       │
-│                                    │                       │
-│  [💡 Hint 1] [💡 Hint 2]           │                       │
-├────────────────────────────────────┼───────────────────────┤
-│  Output                            │  Test Cases           │
-│  ──────                            │  ──────────           │
-│  > Ready to run...                 │  ○ Prints 1-10        │
-│                                    │  ○ Uses for loop      │
-│                                    │  ○ No hardcoding      │
-├────────────────────────────────────┴───────────────────────┤
-│                        [▶ Run Code]    [✓ Submit]          │
-└─────────────────────────────────────────────────────────────┘
-```
-
+## ✅ PILOT COMPLETE (Static Data + Mock Runner)

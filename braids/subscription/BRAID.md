@@ -1,239 +1,265 @@
 # SUBSCRIPTION Braid
 
 ## Purpose
-Handles monetization through subscription tiers, payment processing, and feature access control. Integrates with Stripe for payment handling.
+Payment-agnostic subscription system that controls access to premium features. Designed to work with any payment processor (Stripe, Paddle, LemonSqueezy, etc.).
 
-## Scope
-- Subscription tier definitions
-- Stripe checkout integration
-- Customer portal
-- Webhook handling
-- Feature gating
-- Usage tracking (free tier limits)
+## Core Philosophy
+> **Flexible billing, strict access control.**
+> 
+> The subscription system is decoupled from payment providers. Switch processors without changing access logic.
 
-## Dependencies
-- **External**: 
-  - Stripe (payments)
-  - Stripe CLI (webhook testing)
-- **Internal**: 
-  - core (types)
-  - auth (user context)
-
-## Current Status
-- [ ] Tier definitions
-- [ ] Stripe integration
-- [ ] Checkout flow
-- [ ] Customer portal
-- [ ] Webhook handling
-- [ ] Feature gating middleware
-- [ ] Usage tracking
-- [ ] Frontend pricing page
-- [ ] Account settings
-
-## Strands
-
-### 1. tiers
-Subscription tier management
-- Define tier features
-- Price configuration
-- Limit definitions
-
-### 2. checkout
-Payment flow
-- Create checkout session
-- Handle success/cancel
-- Apply subscription
-
-### 3. portal
-Customer self-service
-- View invoices
-- Update payment method
-- Cancel subscription
-- Change plan
-
-### 4. access
-Feature gating
-- Check tier on protected routes
-- Enforce daily limits
-- Premium content access
-
-### 5. usage
-Free tier tracking
-- Count daily exercises
-- Track language usage
-- Show limit warnings
-
-## API Endpoints
-
-```
-GET    /api/subscription                - Current subscription
-GET    /api/subscription/tiers          - Available tiers
-POST   /api/subscription/checkout       - Create checkout
-POST   /api/subscription/portal         - Create portal session
-POST   /api/subscription/webhook        - Stripe webhook
-GET    /api/subscription/usage          - Usage stats
-POST   /api/subscription/cancel         - Cancel subscription
-```
-
-## Database Schema
-
-### subscriptions
-```sql
-CREATE TABLE subscriptions (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL UNIQUE,
-    tier TEXT NOT NULL DEFAULT 'free',
-    status TEXT NOT NULL DEFAULT 'active',
-    stripe_subscription_id TEXT,
-    stripe_customer_id TEXT,
-    current_period_start TEXT,
-    current_period_end TEXT,
-    cancel_at_period_end INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-### payment_history
-```sql
-CREATE TABLE payment_history (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    stripe_payment_id TEXT NOT NULL,
-    amount INTEGER NOT NULL,
-    currency TEXT NOT NULL DEFAULT 'usd',
-    status TEXT NOT NULL,
-    receipt_url TEXT,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-### usage_records
-```sql
-CREATE TABLE usage_records (
-    id TEXT PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    date TEXT NOT NULL,
-    exercises_run INTEGER DEFAULT 0,
-    languages_used TEXT,           -- JSON array
-    primitives_accessed TEXT,      -- JSON array
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE(user_id, date)
-);
-```
-
-## Stripe Integration
-
-### Environment Variables
-```
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_LEARNER_MONTHLY=price_...
-STRIPE_PRICE_LEARNER_YEARLY=price_...
-STRIPE_PRICE_PRO_MONTHLY=price_...
-STRIPE_PRICE_PRO_YEARLY=price_...
-```
-
-### Checkout Flow
-```
-User clicks "Upgrade"
-        │
-        ▼
-┌───────────────┐
-│ POST /checkout│
-│               │
-│ - Create      │
-│   Stripe      │
-│   Session     │
-└───────┬───────┘
-        │
-        ▼
-Redirect to Stripe Checkout
-        │
-        ▼
-User completes payment
-        │
-        ▼
-┌───────────────┐
-│ Stripe sends  │
-│ webhook       │
-│               │
-│ checkout.     │
-│ session.      │
-│ completed     │
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│ Update user   │
-│ subscription  │
-│ tier          │
-└───────────────┘
-```
-
-## Feature Gating
-
-### Middleware Example
-```typescript
-async function requireTier(requiredTier: SubscriptionTier) {
-    return async (ctx: Context, next: Next) => {
-        const user = ctx.get('user');
-        const userTier = user?.subscriptionTier || 'free';
-        
-        const tierRank = { free: 0, learner: 1, pro: 2, team: 3 };
-        
-        if (tierRank[userTier] < tierRank[requiredTier]) {
-            return ctx.json({
-                success: false,
-                error: { code: 'TIER_REQUIRED', message: `Requires ${requiredTier} tier` }
-            }, 403);
-        }
-        
-        return next();
-    };
-}
-```
-
-### Usage Check (Free Tier)
-```typescript
-async function checkDailyLimit(userId: string): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0];
-    const usage = await getUsage(userId, today);
-    
-    const user = await getUser(userId);
-    const limit = Tiers[user.subscriptionTier].limits.exercisesPerDay;
-    
-    if (limit === 'unlimited') return true;
-    return usage.exercisesRun < limit;
-}
-```
-
-## Pricing Page UI
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                Choose Your Plan                              │
+│                 SUBSCRIPTION SYSTEM                          │
+├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │    FREE     │  │   LEARNER   │  │     PRO     │         │
-│  │             │  │  ★ Popular  │  │             │         │
-│  │    $0/mo    │  │   $9/mo     │  │   $19/mo    │         │
-│  │             │  │  $79/year   │  │  $159/year  │         │
-│  │             │  │             │  │             │         │
-│  │ ✓ Basics    │  │ ✓ All      │  │ ✓ Everything│         │
-│  │ ✓ 1 lang    │  │ ✓ 3 langs   │  │ ✓ 7 langs   │         │
-│  │ ✓ 5/day     │  │ ✓ Unlimited │  │ ✓ AI Review │         │
-│  │             │  │ ✓ Certs     │  │ ✓ Priority  │         │
-│  │             │  │             │  │ ✓ API       │         │
-│  │             │  │             │  │             │         │
-│  │ [Current]   │  │ [Upgrade]   │  │ [Upgrade]   │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│                                                             │
-│  All plans include: Progress tracking, Achievements, Forum  │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
+│  │   TIERS      │    │   ACCESS     │    │   BILLING    │  │
+│  │   Free       │    │   Control    │    │   Provider   │  │
+│  │   Premium    │    │   Middleware │    │   Interface  │  │
+│  │   Pro        │    │              │    │              │  │
+│  └──────────────┘    └──────────────┘    └──────────────┘  │
+│                              │                    │         │
+│                              ▼                    ▼         │
+│                      ┌──────────────────────────────┐      │
+│                      │     Payment Providers        │      │
+│                      │  Stripe │ Paddle │ Lemon...  │      │
+│                      └──────────────────────────────┘      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Subscription Tiers
+
+### Free Tier
+- ✅ 3 free exercises (via free-zone)
+- ✅ Access to 5 primitives
+- ✅ JavaScript only
+- ❌ No progress tracking (localStorage only)
+- ❌ No achievements
+- ❌ Limited hints
+
+### Premium Tier ($9/month or $79/year)
+- ✅ Unlimited exercises
+- ✅ All 13+ primitives
+- ✅ JavaScript + Python + Go
+- ✅ Full progress tracking
+- ✅ All achievements
+- ✅ Unlimited hints
+- ✅ Priority support
+- ❌ No speed boards
+
+### Pro Tier ($19/month or $159/year)
+- ✅ Everything in Premium
+- ✅ All 7+ languages
+- ✅ Speed boards access
+- ✅ Leaderboard participation
+- ✅ AI-powered feedback
+- ✅ Early access to new primitives
+- ✅ Team features (future)
+
+## Feature Gating
+
+```typescript
+const TIER_FEATURES: Record<Tier, TierFeatures> = {
+  free: {
+    maxExercises: 3,
+    maxPrimitives: 5,
+    languages: ['javascript'],
+    progressTracking: false,
+    achievements: false,
+    hintsPerExercise: 1,
+    speedBoards: false,
+    leaderboards: false,
+    aiFeedback: false,
+  },
+  premium: {
+    maxExercises: Infinity,
+    maxPrimitives: Infinity,
+    languages: ['javascript', 'python', 'go'],
+    progressTracking: true,
+    achievements: true,
+    hintsPerExercise: Infinity,
+    speedBoards: false,
+    leaderboards: false,
+    aiFeedback: false,
+  },
+  pro: {
+    maxExercises: Infinity,
+    maxPrimitives: Infinity,
+    languages: ['javascript', 'python', 'go', 'typescript', 'rust', 'java', 'csharp'],
+    progressTracking: true,
+    achievements: true,
+    hintsPerExercise: Infinity,
+    speedBoards: true,
+    leaderboards: true,
+    aiFeedback: true,
+  },
+};
+```
+
+## Payment Provider Interface
+
+```typescript
+interface PaymentProvider {
+  name: string;
+  
+  // Checkout
+  createCheckoutSession(params: CheckoutParams): Promise<CheckoutSession>;
+  
+  // Subscription management
+  getSubscription(subscriptionId: string): Promise<Subscription>;
+  cancelSubscription(subscriptionId: string): Promise<void>;
+  resumeSubscription(subscriptionId: string): Promise<void>;
+  
+  // Webhooks
+  verifyWebhook(payload: string, signature: string): boolean;
+  handleWebhook(event: WebhookEvent): Promise<void>;
+  
+  // Customer portal
+  createPortalSession(customerId: string): Promise<PortalSession>;
+}
+```
+
+## Supported Providers (Planned)
+
+| Provider | Status | Notes |
+|----------|--------|-------|
+| **Mock** | ✅ Ready | For development/testing |
+| Stripe | 📋 Planned | Most popular |
+| Paddle | 📋 Planned | EU-friendly, handles tax |
+| LemonSqueezy | 📋 Planned | Simple, indie-friendly |
+| Gumroad | 📋 Planned | Creator-focused |
+
+## Data Model
+
+### UserSubscription
+```typescript
+interface UserSubscription {
+  id: string;
+  userId: string;
+  
+  // Tier info
+  tier: 'free' | 'premium' | 'pro';
+  status: 'active' | 'cancelled' | 'past_due' | 'trialing';
+  
+  // Billing cycle
+  billingCycle: 'monthly' | 'yearly';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  
+  // Provider info (flexible)
+  provider: string;              // 'stripe' | 'paddle' | etc
+  providerCustomerId?: string;
+  providerSubscriptionId?: string;
+  
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+  cancelledAt?: string;
+}
+```
+
+### BillingEvent
+```typescript
+interface BillingEvent {
+  id: string;
+  userId: string;
+  
+  type: 'payment_succeeded' | 'payment_failed' | 'subscription_created' | 
+        'subscription_updated' | 'subscription_cancelled';
+  
+  provider: string;
+  providerEventId: string;
+  
+  amount?: number;
+  currency?: string;
+  
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/subscription` | Get current subscription |
+| `POST` | `/api/subscription/checkout` | Create checkout session |
+| `POST` | `/api/subscription/cancel` | Cancel subscription |
+| `POST` | `/api/subscription/resume` | Resume cancelled subscription |
+| `GET` | `/api/subscription/portal` | Get billing portal URL |
+| `POST` | `/api/webhooks/:provider` | Handle provider webhooks |
+
+## Access Control Middleware
+
+```typescript
+// Check if user can access a feature
+function canAccess(user: User, feature: Feature): boolean {
+  const tier = user.subscription?.tier || 'free';
+  const features = TIER_FEATURES[tier];
+  
+  switch (feature) {
+    case 'exercise':
+      return features.maxExercises > user.exercisesAccessed;
+    case 'primitive':
+      return features.maxPrimitives > user.primitivesAccessed;
+    case 'language':
+      return features.languages.includes(requestedLanguage);
+    case 'speedBoards':
+      return features.speedBoards;
+    // etc
+  }
+}
+
+// Middleware
+function requireTier(minTier: Tier) {
+  return (req, res, next) => {
+    const userTier = req.user?.subscription?.tier || 'free';
+    if (tierRank(userTier) >= tierRank(minTier)) {
+      next();
+    } else {
+      res.status(403).json({ 
+        error: 'Upgrade required',
+        requiredTier: minTier,
+        currentTier: userTier,
+      });
+    }
+  };
+}
+```
+
+## Frontend Integration
+
+### Upgrade Prompts
+Show contextual upgrade prompts when users hit limits:
+- "Unlock all primitives with Premium"
+- "Practice in Python with Premium"
+- "Join the leaderboard with Pro"
+
+### Pricing Page
+- Clear tier comparison
+- Monthly/yearly toggle (save 30% yearly)
+- FAQ section
+- Money-back guarantee
+
+### Subscription Management
+- View current plan
+- Upgrade/downgrade
+- Cancel/resume
+- Billing history
+- Update payment method (via provider portal)
+
+## Current Status
+- [x] Tier definitions
+- [x] Feature gating logic
+- [x] Frontend subscription store
+- [x] Access control helpers
+- [x] Pricing page UI
+- [x] Upgrade prompts
+- [ ] Backend webhook handlers
+- [ ] Stripe integration
+- [ ] Paddle integration
+
+## ✅ PILOT COMPLETE (Frontend + Mock Provider)

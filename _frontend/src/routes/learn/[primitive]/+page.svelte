@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import {
 		ArrowLeft,
 		Play,
@@ -11,50 +10,43 @@
 		AlertTriangle,
 		BookOpen
 	} from 'lucide-svelte';
-	import { selectedLanguage, supportedLanguages } from '$lib/stores/primitives';
-	import { getPrimitiveById, getExercisesForPrimitive, getMasteryForPrimitive } from '$lib/mock-data';
+	import { 
+		selectedLanguage, 
+		getPrimitive, 
+		getPrimitiveSyntax,
+		setLanguage,
+	} from '$lib/stores/primitives';
+	import { SUPPORTED_LANGUAGES } from '@braids/core/constants';
 
 	$: primitiveId = $page.params.primitive;
-	$: primitive = getPrimitiveById(primitiveId);
-	$: exercises = getExercisesForPrimitive(primitiveId);
-	$: mastery = getMasteryForPrimitive(primitiveId, $selectedLanguage);
+	$: primitive = getPrimitive(primitiveId);
+	$: syntax = getPrimitiveSyntax(primitiveId, $selectedLanguage);
 
-	// Mock syntax examples per language
-	const syntaxExamples: Record<string, Record<string, { syntax: string; example: string }>> = {
-		'for-loop': {
-			javascript: {
-				syntax: 'for (let i = 0; i < count; i++) {\n  // code\n}',
-				example:
-					'for (let i = 0; i < 5; i++) {\n  console.log(`Iteration ${i}`);\n}\n// Output: Iteration 0, 1, 2, 3, 4'
-			},
-			python: {
-				syntax: 'for i in range(count):\n    # code',
-				example: 'for i in range(5):\n    print(f"Iteration {i}")\n# Output: Iteration 0, 1, 2, 3, 4'
-			},
-			go: {
-				syntax: 'for i := 0; i < count; i++ {\n    // code\n}',
-				example:
-					'for i := 0; i < 5; i++ {\n    fmt.Printf("Iteration %d\\n", i)\n}\n// Output: Iteration 0, 1, 2, 3, 4'
-			}
+	// Mock exercises (will come from exercises braid)
+	$: exercises = primitive ? [
+		{
+			id: `ex-${primitiveId}-001`,
+			title: `${primitive.name} Basics`,
+			estimatedMinutes: 5,
+			difficulty: 1,
 		},
-		variables: {
-			javascript: {
-				syntax: 'let name = value;\nconst name = value;',
-				example:
-					'let count = 0;        // Can be reassigned\nconst MAX = 100;      // Cannot be reassigned\nlet name = "Alice";   // String'
-			},
-			python: {
-				syntax: 'name = value',
-				example:
-					'count = 0           # Integer\nMAX = 100           # Convention: UPPERCASE\nname = "Alice"      # String'
-			}
-		}
-	};
+		{
+			id: `ex-${primitiveId}-002`,
+			title: `Practice ${primitive.name}`,
+			estimatedMinutes: 10,
+			difficulty: 2,
+		},
+	] : [];
 
-	$: currentSyntax = syntaxExamples[primitiveId]?.[$selectedLanguage] || {
-		syntax: '// Syntax example coming soon',
-		example: '// Example coming soon'
+	// Mock mastery (will come from progress braid)
+	const mockMastery: Record<string, number> = {
+		'variables': 5,
+		'conditionals': 4,
+		'for-loop': 3,
+		'while-loop': 2,
+		'functions': 1,
 	};
+	$: mastery = { level: mockMastery[primitiveId] || 0 };
 
 	function getMasteryName(level: number): string {
 		const names = ['Unexplored', 'Introduced', 'Practicing', 'Familiar', 'Proficient', 'Mastered'];
@@ -73,6 +65,10 @@
 		return classes[level] || classes[0];
 	}
 </script>
+
+<svelte:head>
+	<title>{primitive?.name || 'Primitive'} | ProgramPrimitives</title>
+</svelte:head>
 
 {#if primitive}
 	<div class="min-h-screen">
@@ -108,20 +104,18 @@
 					</div>
 
 					<!-- Mastery Card -->
-					{#if mastery}
-						<div class="card p-4 min-w-48">
-							<div class="text-sm text-surface-500 mb-1">Your Mastery</div>
-							<div class="flex items-center gap-2 mb-2">
-								<span class="text-2xl font-bold {getMasteryColorClass(mastery.level)}"
-									>Level {mastery.level}</span
-								>
-							</div>
-							<div class="text-sm text-surface-400">{getMasteryName(mastery.level)}</div>
-							<div class="progress-bar mt-3">
-								<div class="progress-fill" style="width: {(mastery.level / 5) * 100}%"></div>
-							</div>
+					<div class="card p-4 min-w-48">
+						<div class="text-sm text-surface-500 mb-1">Your Mastery</div>
+						<div class="flex items-center gap-2 mb-2">
+							<span class="text-2xl font-bold {getMasteryColorClass(mastery.level)}"
+								>Level {mastery.level}</span
+							>
 						</div>
-					{/if}
+						<div class="text-sm text-surface-400">{getMasteryName(mastery.level)}</div>
+						<div class="progress-bar mt-3">
+							<div class="progress-fill" style="width: {(mastery.level / 5) * 100}%"></div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -130,10 +124,10 @@
 			<!-- Language Selector -->
 			<div class="flex items-center gap-4 mb-8 -mt-4">
 				<span class="text-surface-500 text-sm">View syntax in:</span>
-				<div class="flex gap-2">
-					{#each supportedLanguages.slice(0, 4) as lang}
+				<div class="flex gap-2 flex-wrap">
+					{#each SUPPORTED_LANGUAGES.slice(0, 4) as lang}
 						<button
-							on:click={() => selectedLanguage.set(lang.id)}
+							on:click={() => setLanguage(lang.id)}
 							class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all
                      {$selectedLanguage === lang.id
 								? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
@@ -154,35 +148,62 @@
 							<BookOpen size={20} class="text-primary-400" />
 							Why It Matters
 						</h2>
-						<p class="text-surface-300 leading-relaxed">{primitive.whyItMatters}</p>
+						<p class="text-surface-300 leading-relaxed whitespace-pre-line">{primitive.whyItMatters}</p>
 					</section>
 
 					<!-- Syntax -->
-					<section class="card overflow-hidden">
-						<div class="p-4 border-b border-surface-800 flex items-center justify-between">
-							<h2 class="text-lg font-semibold">Syntax</h2>
-							<span class="text-surface-500 text-sm">{$selectedLanguage}</span>
-						</div>
-						<div class="bg-surface-950 p-4">
-							<pre
-								class="font-mono text-sm text-surface-300 overflow-x-auto">{currentSyntax.syntax}</pre>
-						</div>
-					</section>
+					{#if syntax}
+						<section class="card overflow-hidden">
+							<div class="p-4 border-b border-surface-800 flex items-center justify-between">
+								<h2 class="text-lg font-semibold">Syntax</h2>
+								<span class="text-surface-500 text-sm">{$selectedLanguage}</span>
+							</div>
+							<div class="bg-surface-950 p-4">
+								<pre class="font-mono text-sm text-surface-300 overflow-x-auto">{syntax.syntaxTemplate}</pre>
+							</div>
+							{#if syntax.explanation}
+								<div class="p-4 border-t border-surface-800 text-sm text-surface-400">
+									{syntax.explanation}
+								</div>
+							{/if}
+						</section>
 
-					<!-- Example -->
-					<section class="card overflow-hidden">
-						<div class="p-4 border-b border-surface-800 flex items-center justify-between">
-							<h2 class="text-lg font-semibold">Example</h2>
-							<button class="btn btn-ghost text-sm py-1">
-								<Play size={14} />
-								Run
-							</button>
-						</div>
-						<div class="bg-surface-950 p-4">
-							<pre
-								class="font-mono text-sm text-surface-300 overflow-x-auto">{currentSyntax.example}</pre>
-						</div>
-					</section>
+						<!-- Example -->
+						<section class="card overflow-hidden">
+							<div class="p-4 border-b border-surface-800 flex items-center justify-between">
+								<h2 class="text-lg font-semibold">Example</h2>
+								<button class="btn btn-ghost text-sm py-1">
+									<Play size={14} />
+									Run
+								</button>
+							</div>
+							<div class="bg-surface-950 p-4">
+								<pre class="font-mono text-sm text-surface-300 overflow-x-auto">{syntax.fullExample}</pre>
+							</div>
+						</section>
+
+						<!-- Tips -->
+						{#if syntax.tips && syntax.tips.length > 0}
+							<section class="card p-6">
+								<h2 class="text-lg font-semibold mb-4 flex items-center gap-2 text-accent-400">
+									<Lightbulb size={18} />
+									Pro Tips for {$selectedLanguage}
+								</h2>
+								<ul class="space-y-2">
+									{#each syntax.tips as tip}
+										<li class="flex items-start gap-2 text-sm">
+											<span class="text-accent-500">→</span>
+											<span class="text-surface-300">{tip}</span>
+										</li>
+									{/each}
+								</ul>
+							</section>
+						{/if}
+					{:else}
+						<section class="card p-6 text-center text-surface-400">
+							<p>Syntax examples for {$selectedLanguage} coming soon!</p>
+						</section>
+					{/if}
 
 					<!-- Best Practices & Pitfalls -->
 					<div class="grid sm:grid-cols-2 gap-6">
@@ -271,25 +292,49 @@
 					</div>
 
 					<!-- Related Primitives -->
-					<div class="card p-6">
-						<h2 class="text-lg font-semibold mb-4">Related Primitives</h2>
-						<div class="space-y-2">
-							<a
-								href="/learn/while-loop"
-								class="block p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 transition-colors"
-							>
-								<div class="font-medium text-sm">While Loop</div>
-								<div class="text-xs text-surface-500">Similar iteration pattern</div>
-							</a>
-							<a
-								href="/learn/arrays"
-								class="block p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 transition-colors"
-							>
-								<div class="font-medium text-sm">Arrays</div>
-								<div class="text-xs text-surface-500">Often used with loops</div>
-							</a>
+					{#if primitive.related && primitive.related.length > 0}
+						<div class="card p-6">
+							<h2 class="text-lg font-semibold mb-4">Related Primitives</h2>
+							<div class="space-y-2">
+								{#each primitive.related.slice(0, 4) as relatedId}
+									{@const related = getPrimitive(relatedId)}
+									{#if related}
+										<a
+											href="/learn/{relatedId}"
+											class="block p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 transition-colors"
+										>
+											<div class="flex items-center gap-2">
+												<span class="text-lg">{related.icon}</span>
+												<div class="font-medium text-sm">{related.name}</div>
+											</div>
+											<div class="text-xs text-surface-500 mt-1">{related.description}</div>
+										</a>
+									{/if}
+								{/each}
+							</div>
 						</div>
-					</div>
+					{/if}
+
+					<!-- Prerequisites -->
+					{#if primitive.prerequisites && primitive.prerequisites.length > 0}
+						<div class="card p-6">
+							<h2 class="text-lg font-semibold mb-4">Prerequisites</h2>
+							<div class="space-y-2">
+								{#each primitive.prerequisites as prereqId}
+									{@const prereq = getPrimitive(prereqId)}
+									{#if prereq}
+										<a
+											href="/learn/{prereqId}"
+											class="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-800/50 transition-colors"
+										>
+											<span>{prereq.icon}</span>
+											<span class="text-sm">{prereq.name}</span>
+										</a>
+									{/if}
+								{/each}
+							</div>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -304,4 +349,3 @@
 		</div>
 	</div>
 {/if}
-
