@@ -5,13 +5,39 @@
 	import ProgressDashboard from '@braids/progress/frontend/components/ProgressDashboard.svelte';
 	import AchievementsPanel from '@braids/gamification/frontend/components/AchievementsPanel.svelte';
 	import DailyChallenges from '@braids/gamification/frontend/components/DailyChallenges.svelte';
-	import { Flame, Trophy, Zap, Target, TrendingUp, BookOpen, ChevronRight, Star } from 'lucide-svelte';
+	import { Flame, Trophy, Zap, Target, TrendingUp, BookOpen, ChevronRight, Star, Lock, LogIn } from 'lucide-svelte';
 </script>
 
 <svelte:head>
 	<title>Dashboard | ProgramPrimitives</title>
 </svelte:head>
 
+{#if !$isAuthenticated}
+	<!-- Auth Required -->
+	<div class="min-h-screen flex items-center justify-center py-12">
+		<div class="max-w-md mx-auto px-4 text-center">
+			<div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500/20 to-accent-500/20 flex items-center justify-center mx-auto mb-6">
+				<Lock size={40} class="text-primary-400" />
+			</div>
+			<h1 class="text-3xl font-display font-bold mb-4">Sign in to view your Dashboard</h1>
+			<p class="text-surface-400 mb-8">
+				Track your progress, see your achievements, and continue your learning journey.
+			</p>
+			<div class="flex flex-col sm:flex-row gap-3 justify-center">
+				<a href="/login" class="btn btn-primary">
+					<LogIn size={18} />
+					Sign In
+				</a>
+				<a href="/register" class="btn btn-secondary">
+					Create Account
+				</a>
+			</div>
+			<p class="text-sm text-surface-500 mt-6">
+				Want to try first? <a href="/try" class="text-primary-400 hover:underline">Start for free</a>
+			</p>
+		</div>
+	</div>
+{:else}
 <div class="min-h-screen py-12">
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<!-- Header -->
@@ -168,3 +194,4 @@
 		</div>
 	</div>
 </div>
+{/if}

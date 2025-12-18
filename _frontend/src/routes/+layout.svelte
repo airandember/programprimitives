@@ -85,15 +85,15 @@
 					{#if $isAuthenticated}
 						<!-- Stats -->
 						<div class="hidden sm:flex items-center gap-4 text-sm">
-							<div class="flex items-center gap-1.5 text-orange-500">
-								<Flame size={18} class="fill-orange-500/30" />
-								<span class="font-semibold">{$currentStreak}</span>
-							</div>
-							<div class="flex items-center gap-1.5 text-accent-400">
-								<Zap size={18} class="fill-accent-400/30" />
-								<span class="font-semibold">{$totalXp}</span>
-							</div>
-							<div class="badge badge-primary">Lvl {$currentLevel}</div>
+						<div class="flex items-center gap-1.5 text-orange-500">
+							<Flame size={18} class="fill-orange-500/30" />
+							<span class="font-semibold">{currentStreak}</span>
+						</div>
+						<div class="flex items-center gap-1.5 text-accent-400">
+							<Zap size={18} class="fill-accent-400/30" />
+							<span class="font-semibold">{totalXp}</span>
+						</div>
+						<div class="badge badge-primary">Lvl {currentLevel}</div>
 						</div>
 
 						<!-- User Menu -->
@@ -151,19 +151,19 @@
 						<div class="text-center">
 							<div class="flex items-center justify-center gap-1 text-orange-500">
 								<Flame size={16} />
-								<span class="font-bold">{$currentStreak}</span>
+								<span class="font-bold">{currentStreak}</span>
 							</div>
 							<div class="text-xs text-surface-500">Streak</div>
 						</div>
 						<div class="text-center">
 							<div class="flex items-center justify-center gap-1 text-accent-400">
 								<Zap size={16} />
-								<span class="font-bold">{$totalXp}</span>
+								<span class="font-bold">{totalXp}</span>
 							</div>
 							<div class="text-xs text-surface-500">XP</div>
 						</div>
 						<div class="text-center">
-							<div class="font-bold text-primary-400">Lvl {$currentLevel}</div>
+							<div class="font-bold text-primary-400">Lvl {currentLevel}</div>
 							<div class="text-xs text-surface-500">Level</div>
 						</div>
 					</div>

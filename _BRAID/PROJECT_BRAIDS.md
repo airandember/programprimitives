@@ -395,6 +395,8 @@ Week 9-10: Conversion & Monetize
 - ✅ Dashboard with progress tracking
 - ✅ Achievements page with badges
 - ✅ Login/Register with auth modal
+- ✅ Pricing page with tier comparison
+- ✅ Settings page with subscription management
 
 ### Key Features
 - ✅ 13 primitives with full content
