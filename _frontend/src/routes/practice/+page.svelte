@@ -1,43 +1,51 @@
 <script lang="ts">
-	import { Play, Clock, Target, ChevronRight, Flame, Trophy, Filter, Star } from 'lucide-svelte';
-	import { primitives, supportedLanguages, selectedLanguage } from '$lib/stores/primitives';
-	import { mockExercises, getMasteryForPrimitive, getPrimitiveById } from '$lib/mock-data';
+	import { Play, Clock, Target, ChevronRight, Flame, Trophy, Star } from 'lucide-svelte';
+	import { primitives, selectedLanguage, CATEGORIES } from '$lib/stores/primitives';
+	import { getPrimitive } from '$lib/stores/primitives';
+	import { 
+		exercises, 
+		filteredExercises,
+		exercisesByPrimitive,
+		filterByPrimitive,
+		filterByDifficulty,
+	} from '$lib/stores/exercises';
+	import { SUPPORTED_LANGUAGES } from '@braids/core/constants';
 
-	let selectedDifficulty = 'all';
-	let selectedPrimitive = 'all';
+	let selectedDifficultyValue = 'all';
+	let selectedPrimitiveValue = 'all';
 
-	// Mock completion data
-	const completedExercises = new Set(['ex-001', 'ex-004', 'ex-005']);
+	// Reactive filter updates
+	$: filterByPrimitive(selectedPrimitiveValue === 'all' ? null : selectedPrimitiveValue);
+	$: filterByDifficulty(selectedDifficultyValue === 'all' ? null : parseInt(selectedDifficultyValue));
+
+	// Mock completion data (will come from progress braid)
+	const completedExercises = new Set(['ex-for-001', 'ex-var-001', 'ex-cond-001']);
 	const exerciseScores: Record<string, number> = {
-		'ex-001': 95,
-		'ex-004': 100,
-		'ex-005': 88
+		'ex-for-001': 95,
+		'ex-var-001': 100,
+		'ex-cond-001': 88
 	};
 
 	function getPrimitiveName(id: string): string {
-		const p = getPrimitiveById(id);
+		const p = getPrimitive(id);
 		return p?.name || id;
 	}
 
 	function getPrimitiveIcon(id: string): string {
-		const p = getPrimitiveById(id);
+		const p = getPrimitive(id);
 		return p?.icon || '📦';
 	}
 
-	$: filteredExercises = mockExercises.filter((e) => {
-		const matchesDifficulty = selectedDifficulty === 'all' || e.difficulty === parseInt(selectedDifficulty);
-		const matchesPrimitive = selectedPrimitive === 'all' || e.primitiveId === selectedPrimitive;
-		return matchesDifficulty && matchesPrimitive;
-	});
-
-	// Group by primitive
-	$: exercisesByPrimitive = filteredExercises.reduce((acc, ex) => {
-		if (!acc[ex.primitiveId]) {
-			acc[ex.primitiveId] = [];
-		}
-		acc[ex.primitiveId].push(ex);
-		return acc;
-	}, {} as Record<string, typeof mockExercises>);
+	// Group filtered exercises by primitive
+	$: groupedExercises = Object.entries(
+		$filteredExercises.reduce((acc, ex) => {
+			if (!acc[ex.primitiveId]) {
+				acc[ex.primitiveId] = [];
+			}
+			acc[ex.primitiveId].push(ex);
+			return acc;
+		}, {} as Record<string, typeof $filteredExercises>)
+	);
 
 	const dailyChallenge = {
 		primitive: 'For Loop',
@@ -45,10 +53,14 @@
 		description: 'The classic programming interview question',
 		xpReward: 100,
 		timeLimit: '15 min',
-		exerciseId: 'ex-003',
+		exerciseId: 'ex-for-003',
 		primitiveId: 'for-loop'
 	};
 </script>
+
+<svelte:head>
+	<title>Practice | ProgramPrimitives</title>
+</svelte:head>
 
 <div class="min-h-screen">
 	<!-- Header -->
@@ -113,7 +125,7 @@
 		<div class="card p-4 mb-8">
 			<div class="flex flex-col sm:flex-row gap-4">
 				<!-- Primitive filter -->
-				<select bind:value={selectedPrimitive} class="input w-full sm:w-auto">
+				<select bind:value={selectedPrimitiveValue} class="input w-full sm:w-auto">
 					<option value="all">All Primitives</option>
 					{#each $primitives as p}
 						<option value={p.id}>{p.icon} {p.name}</option>
@@ -121,7 +133,7 @@
 				</select>
 
 				<!-- Difficulty filter -->
-				<select bind:value={selectedDifficulty} class="input w-full sm:w-auto">
+				<select bind:value={selectedDifficultyValue} class="input w-full sm:w-auto">
 					<option value="all">All Difficulties</option>
 					<option value="1">⭐ Beginner</option>
 					<option value="2">⭐⭐ Easy</option>
@@ -132,15 +144,21 @@
 
 				<!-- Language selector -->
 				<select bind:value={$selectedLanguage} class="input w-full sm:w-auto">
-					{#each supportedLanguages as lang}
+					{#each SUPPORTED_LANGUAGES as lang}
 						<option value={lang.id}>{lang.icon} {lang.name}</option>
 					{/each}
 				</select>
+
+				<!-- Stats summary -->
+				<div class="flex-1 flex items-center justify-end gap-4 text-sm text-surface-500">
+					<span>{$filteredExercises.length} exercises</span>
+					<span>{completedExercises.size} completed</span>
+				</div>
 			</div>
 		</div>
 
 		<!-- Exercise List by Primitive -->
-		{#each Object.entries(exercisesByPrimitive) as [primitiveId, exercises]}
+		{#each groupedExercises as [primitiveId, exercises]}
 			<div class="mb-10">
 				<div class="flex items-center gap-3 mb-4">
 					<span class="text-2xl">{getPrimitiveIcon(primitiveId)}</span>
@@ -223,7 +241,7 @@
 		{/each}
 
 		<!-- Empty state -->
-		{#if filteredExercises.length === 0}
+		{#if $filteredExercises.length === 0}
 			<div class="text-center py-20">
 				<div class="text-6xl mb-4">🎯</div>
 				<h3 class="text-xl font-semibold mb-2">No exercises found</h3>

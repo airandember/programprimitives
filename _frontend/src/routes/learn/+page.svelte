@@ -2,20 +2,33 @@
 	import { Search, ChevronRight, Lock, Check, Star } from 'lucide-svelte';
 	import {
 		primitives,
-		categories,
-		supportedLanguages,
-		selectedLanguage
+		filteredPrimitives,
+		selectedLanguage,
+		searchQuery,
+		selectedCategory,
+		setSearchQuery,
+		setCategory,
+		CATEGORIES,
 	} from '$lib/stores/primitives';
-	import { mockMastery } from '$lib/mock-data';
+	import { SUPPORTED_LANGUAGES } from '@braids/core/constants';
 
-	let searchQuery = '';
-	let selectedCategory = 'all';
+	// Local search value (synced with store)
+	let localSearch = '';
+	let localCategory = 'all';
 
+	$: setSearchQuery(localSearch);
+	$: setCategory(localCategory === 'all' ? null : localCategory);
+
+	// Mock mastery for now (will come from progress braid)
 	function getMasteryLevel(primitiveId: string): number {
-		const mastery = mockMastery.find(
-			(m) => m.primitiveId === primitiveId && m.language === $selectedLanguage
-		);
-		return mastery?.level || 0;
+		const mockMastery: Record<string, number> = {
+			'variables': 5,
+			'conditionals': 4,
+			'for-loop': 3,
+			'while-loop': 2,
+			'functions': 1,
+		};
+		return mockMastery[primitiveId] || 0;
 	}
 
 	function getMasteryColor(level: number): string {
@@ -35,22 +48,18 @@
 		return labels[d] || '';
 	}
 
-	$: filteredPrimitives = $primitives.filter((p) => {
-		const matchesSearch =
-			searchQuery === '' ||
-			p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			p.description.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
-		return matchesSearch && matchesCategory;
-	});
-
-	$: groupedPrimitives = categories
+	// Group primitives by category
+	$: groupedPrimitives = CATEGORIES
 		.map((cat) => ({
 			...cat,
-			primitives: filteredPrimitives.filter((p) => p.category === cat.id)
+			primitives: $filteredPrimitives.filter((p) => p.category === cat.id)
 		}))
 		.filter((cat) => cat.primitives.length > 0);
 </script>
+
+<svelte:head>
+	<title>Learn Primitives | ProgramPrimitives</title>
+</svelte:head>
 
 <div class="min-h-screen">
 	<!-- Header -->
@@ -76,22 +85,22 @@
 					<input
 						type="text"
 						placeholder="Search primitives..."
-						bind:value={searchQuery}
+						bind:value={localSearch}
 						class="input pl-10"
 					/>
 				</div>
 
 				<!-- Category filter -->
-				<select bind:value={selectedCategory} class="input w-full sm:w-48">
+				<select bind:value={localCategory} class="input w-full sm:w-48">
 					<option value="all">All Categories</option>
-					{#each categories as category}
+					{#each CATEGORIES as category}
 						<option value={category.id}>{category.icon} {category.name}</option>
 					{/each}
 				</select>
 
 				<!-- Language selector -->
 				<select bind:value={$selectedLanguage} class="input w-full sm:w-44">
-					{#each supportedLanguages as lang}
+					{#each SUPPORTED_LANGUAGES as lang}
 						<option value={lang.id}>{lang.icon} {lang.name}</option>
 					{/each}
 				</select>
@@ -190,7 +199,7 @@
 		{/each}
 
 		<!-- Empty state -->
-		{#if filteredPrimitives.length === 0}
+		{#if $filteredPrimitives.length === 0}
 			<div class="text-center py-20">
 				<div class="text-6xl mb-4">🔍</div>
 				<h3 class="text-xl font-semibold mb-2">No primitives found</h3>

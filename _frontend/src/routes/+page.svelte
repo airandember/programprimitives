@@ -99,7 +99,7 @@
 				<!-- Headline -->
 				<h1 class="text-5xl sm:text-6xl lg:text-7xl font-display font-bold tracking-tight mb-6 animate-fade-in">
 					Master the
-					<span class="text-gradient block sm:inline">Physics of Code</span>
+					<span class="text-gradient block sm:inline">Tools of Code</span>
 				</h1>
 
 				<p class="text-lg sm:text-xl text-surface-400 max-w-2xl mx-auto mb-10 animate-fade-in stagger-1">
@@ -122,9 +122,9 @@
 
 				<!-- CTA Buttons -->
 				<div class="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in stagger-3">
-					<a href="/register" class="btn btn-primary text-lg px-8 py-3.5 shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-shadow">
-						Start Learning Free
-						<ArrowRight size={20} />
+					<a href="/try" class="btn btn-primary text-lg px-8 py-3.5 shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-shadow">
+						<Play size={20} />
+						Try It Now — Free
 					</a>
 					<a href="/learn" class="btn btn-secondary text-lg px-8 py-3.5">
 						<BookOpen size={20} />

@@ -17,7 +17,8 @@ const config = {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
 			$utils: 'src/lib/utils',
-			$types: 'src/lib/types'
+			$types: 'src/lib/types',
+			'@braids': '../braids'
 		}
 	}
 };

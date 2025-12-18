@@ -39,7 +39,8 @@
     "@sveltejs/adapter-cloudflare": "^7.2.4",
     "chart.js": "^4.4.1",
     "lucide-svelte": "^0.303.0",
-    "svelte-confetti": "^1.3.2"
+    "svelte-confetti": "^1.3.2",
+    "zod": "^3.25.76"
   },
   "overrides": {
     "picomatch": "^4.0.3",

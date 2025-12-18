@@ -2,7 +2,8 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import { user, isAuthenticated } from '$lib/stores/auth';
-	import { currentStreak, totalXp, currentLevel } from '$lib/stores/progress';
+	import { progress } from '$lib/stores/progress';
+	import { getLevelTitle } from '$lib/stores/gamification';
 	import {
 		Menu,
 		X,
@@ -15,6 +16,11 @@
 		Zap
 	} from 'lucide-svelte';
 
+	// Reactive progress values
+	$: currentStreak = $progress.currentDailyStreak;
+	$: totalXp = $progress.totalXp;
+	$: currentLevel = $progress.currentLevel;
+
 	let mobileMenuOpen = false;
 
 	const navItems = [
@@ -22,7 +28,13 @@
 		{ href: '/learn', label: 'Learn', icon: BookOpen },
 		{ href: '/practice', label: 'Practice', icon: Code2 },
 		{ href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-		{ href: '/achievements', label: 'Achievements', icon: Trophy }
+		{ href: '/achievements', label: 'Achievements', icon: Trophy },
+	];
+
+	// Secondary nav (shown in user dropdown)
+	const secondaryNav = [
+		{ href: '/settings', label: 'Settings' },
+		{ href: '/pricing', label: 'Pricing' },
 	];
 
 	function isActive(href: string): boolean {
@@ -32,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<title>ProgramPrimitives - Master the Physics of Code</title>
+	<title>ProgramPrimitives - Master the Tools of Code</title>
 </svelte:head>
 
 <div class="min-h-screen flex flex-col">
@@ -175,7 +187,7 @@
 						<img src="/LOGO_light.webp" alt="ProgramPrimitives" class="h-8 w-auto" />
 					</a>
 					<p class="text-surface-500 text-sm">
-						Master the physics of code, not just the vocabulary.
+						Master the tools of code, not just the vocabulary.
 					</p>
 				</div>
 
