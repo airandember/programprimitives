@@ -2,9 +2,9 @@
 	import { user, isAuthenticated } from '$lib/stores/auth';
 	import { progress, MASTERY_LEVELS } from '$lib/stores/progress';
 	import { gamification, getLevelTitle, unlockedAchievements } from '$lib/stores/gamification';
-	import ProgressDashboard from '@braids/progress/frontend/components/ProgressDashboard.svelte';
-	import AchievementsPanel from '@braids/gamification/frontend/components/AchievementsPanel.svelte';
-	import DailyChallenges from '@braids/gamification/frontend/components/DailyChallenges.svelte';
+	import ProgressDashboard from '$lib/components/progress/ProgressDashboard.svelte';
+	import AchievementsPanel from '$lib/components/gamification/AchievementsPanel.svelte';
+	import DailyChallenges from '$lib/components/gamification/DailyChallenges.svelte';
 	import { Flame, Trophy, Zap, Target, TrendingUp, BookOpen, ChevronRight, Star, Lock, LogIn } from 'lucide-svelte';
 </script>
 

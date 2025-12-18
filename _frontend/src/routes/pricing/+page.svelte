@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Check, Zap, Star, Crown, HelpCircle } from 'lucide-svelte';
-	import PricingCard from '@braids/subscription/frontend/components/PricingCard.svelte';
+	import PricingCard from '$lib/components/subscription/PricingCard.svelte';
 	import { 
 		subscription,
 		currentTier,

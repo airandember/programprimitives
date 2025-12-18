@@ -1,5 +1,5 @@
 <script lang="ts">
-	import AchievementsPanel from '@braids/gamification/frontend/components/AchievementsPanel.svelte';
+	import AchievementsPanel from '$lib/components/gamification/AchievementsPanel.svelte';
 	import { achievementXp, unlockedAchievements, ACHIEVEMENTS } from '$lib/stores/gamification';
 	import { isAuthenticated } from '$lib/stores/auth';
 	import { Trophy, Zap, Lock, LogIn } from 'lucide-svelte';
