@@ -1,0 +1,38 @@
+# LiteFS Configuration for ProgramPrimitives
+# Distributed SQLite across Fly.io regions
+
+# The FUSE mount directory - where SQLite will access the database
+fuse:
+  dir: "/data"
+
+# Database files to manage
+data:
+  dir: "/var/lib/litefs"
+
+# Proxy configuration for lease management
+proxy:
+  addr: ":8081"
+  target: "localhost:8080"
+  db: "programprimitives.db"
+
+# Lease configuration for primary election
+lease:
+  type: "consul"
+  advertise-url: "http://${HOSTNAME}.vm.${FLY_APP_NAME}.internal:20202"
+  candidate: ${FLY_REGION == PRIMARY_REGION}
+  promote: true
+
+  consul:
+    url: "${FLY_CONSUL_URL}"
+    key: "programprimitives/primary"
+
+# Execute the app after mounting
+exec:
+  - cmd: "/app/server"
+
+# Backup configuration (optional, for disaster recovery)
+# backup:
+#   type: "s3"
+#   bucket: "your-backup-bucket"
+#   region: "us-east-1"
+

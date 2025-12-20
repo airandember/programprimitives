@@ -1,7 +1,12 @@
 // API client for ProgramPrimitives backend
-// Uses mock data when backend is unavailable
+// Uses same-origin in production, configurable for development
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+// In production, API is served from same origin (Go serves both)
+// In development, API runs on port 8080
+const API_URL = import.meta.env.VITE_API_URL || 
+	(typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+		? 'http://localhost:8080' 
+		: '');
 
 interface APIResponse<T> {
 	success: boolean;
@@ -20,14 +25,13 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T |
 			}
 		});
 
-		const data: APIResponse<T> = await response.json();
-
-		if (data.success) {
-			return data.data || null;
+		if (!response.ok) {
+			console.error('API Error:', response.status, response.statusText);
+			return null;
 		}
 
-		console.error('API Error:', data.error);
-		return null;
+		const data = await response.json();
+		return data;
 	} catch (error) {
 		console.warn('API unavailable, using mock data');
 		return null;
@@ -73,6 +77,13 @@ export const api = {
 			body: JSON.stringify({ code, language, hintsUsed })
 		}),
 
+	// Sandbox
+	runSandbox: (code: string, language: string) =>
+		fetchAPI('/api/sandbox/run', {
+			method: 'POST',
+			body: JSON.stringify({ code, language })
+		}),
+
 	// Progress
 	getProgress: () => fetchAPI('/api/progress'),
 	getMastery: () => fetchAPI('/api/progress/primitives'),
@@ -81,4 +92,3 @@ export const api = {
 	getAchievements: () => fetchAPI('/api/achievements'),
 	getLeaderboard: (period: string) => fetchAPI(`/api/leaderboard/${period}`)
 };
-

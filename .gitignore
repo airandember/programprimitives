@@ -1,100 +1,50 @@
-# ===================
 # Dependencies
-# ===================
 node_modules/
-_frontend/braids/node_modules/
 .pnpm-store/
 
-# ===================
 # Build outputs
-# ===================
-# Frontend (SvelteKit)
-_frontend/.svelte-kit/
-.svelte-kit/
 _frontend/build/
-_frontend/.vercel/
-_frontend/.netlify/
+_frontend/.svelte-kit/
+bin/
+*.wasm
 
-# Backend (Go/Cloudflare Workers)
-_backend/build/
-_backend/*.wasm
-_backend/dist/
+# Database (local development)
+_backend/data/*.db
+_backend/data/*.db-shm
+_backend/data/*.db-wal
+*.sqlite
+*.sqlite3
 
-# ===================
-# Environment & Secrets
-# ===================
+# Environment files
 .env
 .env.*
 !.env.example
-.dev.vars
-.wrangler/
 
-# ===================
-# IDE & Editors
-# ===================
-.vscode/
-!.vscode/extensions.json
-!.vscode/settings.json
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
-.project
-.classpath
-.settings/
 
-# ===================
-# OS Files
-# ===================
+# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-Desktop.ini
 
-# ===================
-# Logs & Debug
-# ===================
-logs/
+# Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-# ===================
-# Testing
-# ===================
+# Fly.io
+.fly/
+
+# Cloudflare (legacy - no longer used)
+.wrangler/
+.dev.vars
+
+# Test coverage
 coverage/
 .nyc_output/
-_frontend/playwright-report/
-_frontend/playwright/.cache/
-_frontend/test-results/
 
-# ===================
-# TypeScript
-# ===================
-*.tsbuildinfo
-
-# ===================
-# Misc
-# ===================
-*.local
-*.bak
+# Temporary files
 *.tmp
 *.temp
-
-# Cloudflare
-.mf/
-.cloudflare/
-
-# Package manager locks (keep one, ignore others if switching)
-# Uncomment whichever you're NOT using:
-# package-lock.json
-# pnpm-lock.yaml
-# yarn.lock
-
