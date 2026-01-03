@@ -2,12 +2,14 @@
 # Stage 1: Build SvelteKit frontend
 # Stage 2: Build Go backend  
 # Stage 3: Production runtime
-# Build version: 2026-01-03-v2
 
 # ============================================
 # Stage 1: Build Frontend
 # ============================================
 FROM node:20-alpine AS frontend-builder
+
+# Cache bust - change this to force rebuild
+ARG CACHEBUST=2026-01-03-v3
 
 WORKDIR /app
 
