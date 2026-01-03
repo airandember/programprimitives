@@ -4,8 +4,6 @@ package main
 
 import (
 	"database/sql"
-	"embed"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"

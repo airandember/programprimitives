@@ -1,7 +1,7 @@
 # ProgramPrimitives - Multi-stage Dockerfile
 # Stage 1: Build SvelteKit frontend
 # Stage 2: Build Go backend
-# Stage 3: Production runtime with LiteFS
+# Stage 3: Production runtime
 
 # ============================================
 # Stage 1: Build Frontend
@@ -52,11 +52,7 @@ FROM alpine:3.19
 # Install runtime dependencies
 RUN apk add --no-cache \
     ca-certificates \
-    fuse3 \
     sqlite
-
-# Install LiteFS
-COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs
 
 # Create app directory
 WORKDIR /app
@@ -70,15 +66,11 @@ COPY --from=frontend-builder /app/frontend/build /app/static
 # Copy migrations
 COPY _backend/migrations /app/migrations
 
-# Copy LiteFS config
-COPY litefs.yml /etc/litefs.yml
-
 # Create data directory
 RUN mkdir -p /data
 
 # Expose port
 EXPOSE 8080
 
-# Run with LiteFS (handles SQLite replication)
-CMD ["litefs", "mount"]
-
+# Run the server directly
+CMD ["/app/server"]
