@@ -2,25 +2,31 @@
 # Stage 1: Build SvelteKit frontend
 # Stage 2: Build Go backend  
 # Stage 3: Production runtime
-# Build version: 2026-01-03
+# Build version: 2026-01-03-v2
 
 # ============================================
 # Stage 1: Build Frontend
 # ============================================
 FROM node:20-alpine AS frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copy package files
-COPY _frontend/package*.json ./
+COPY _frontend/package*.json ./frontend/
 
 # Install dependencies
+WORKDIR /app/frontend
 RUN npm ci
 
+# Copy braids folder (shared code referenced by frontend)
+WORKDIR /app
+COPY braids/ ./braids/
+
 # Copy frontend source
-COPY _frontend/ ./
+COPY _frontend/ ./frontend/
 
 # Build static files
+WORKDIR /app/frontend
 RUN npm run build
 
 # ============================================
