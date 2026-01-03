@@ -1,7 +1,8 @@
 # ProgramPrimitives - Multi-stage Dockerfile
 # Stage 1: Build SvelteKit frontend
-# Stage 2: Build Go backend
+# Stage 2: Build Go backend  
 # Stage 3: Production runtime
+# Build version: 2026-01-03
 
 # ============================================
 # Stage 1: Build Frontend
