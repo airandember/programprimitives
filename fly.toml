@@ -1,5 +1,7 @@
-# fly.toml - ProgramPrimitives Configuration
-# See https://fly.io/docs/reference/configuration/
+# fly.toml app configuration file generated for programprimitives on 2026-01-04T00:56:32Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = 'programprimitives'
 primary_region = 'iad'
