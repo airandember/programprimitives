@@ -16,7 +16,6 @@ primary_region = 'iad'
 # HTTP service configuration (handles ports 80 & 443 automatically)
 [http_service]
   internal_port = 8080
-  force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
@@ -45,3 +44,19 @@ primary_region = 'iad'
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
+
+
+[[services]]
+  internal_port = 8080
+  processes = ["app"]
+  force_https = true
+
+[[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+
+[[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
