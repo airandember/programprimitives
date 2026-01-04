@@ -35,9 +35,9 @@ primary_region = 'iad'
     path = "/api/health"
 
 # Persistent storage for SQLite database
-[mounts]
-  source = "data"
-  destination = "/data"
+#[mounts]
+#  source = "data"
+#  destination = "/data"
 
 # VM configuration
 [[vm]]
