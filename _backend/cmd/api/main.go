@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/programprimitives/api/internal/admin"
 	"github.com/programprimitives/api/internal/auth"
 	"github.com/programprimitives/api/internal/db"
 	"github.com/programprimitives/api/internal/response"
@@ -31,6 +32,7 @@ type App struct {
 	db             *sql.DB
 	authHandler    *auth.Handler
 	sandboxHandler *sandbox.Handler
+	adminHandler   *admin.Handler
 }
 
 func main() {
@@ -54,12 +56,16 @@ func main() {
 		log.Printf("Warning: Migration error: %v", err)
 	}
 
+	// Initialize handlers
+	authHandler := auth.NewHandlerWithDB(database)
+	
 	// Initialize app
 	app := &App{
 		config:         config,
 		db:             database,
-		authHandler:    auth.NewHandlerWithDB(database),
+		authHandler:    authHandler,
 		sandboxHandler: sandbox.NewHandler(),
+		adminHandler:   admin.NewHandler(database, authHandler),
 	}
 
 	// Create router
@@ -121,6 +127,42 @@ func (app *App) registerAPIRoutes(mux *http.ServeMux) {
 	// Gamification routes
 	mux.HandleFunc("GET /api/achievements", app.handleListAchievements)
 	mux.HandleFunc("GET /api/leaderboard/{period}", app.handleLeaderboard)
+
+	// Admin routes (protected by admin middleware)
+	adminMw := app.adminHandler.GetMiddleware()
+	
+	// Admin dashboard
+	mux.HandleFunc("GET /api/admin/stats", adminMw.RequireAdmin(app.adminHandler.HandleDashboardStats))
+	mux.HandleFunc("GET /api/admin/audit-log", adminMw.RequireAdmin(app.adminHandler.HandleListAuditLog))
+	
+	// Admin - Primitives CRUD
+	mux.HandleFunc("GET /api/admin/primitives", adminMw.RequireAdmin(app.adminHandler.HandleListPrimitives))
+	mux.HandleFunc("POST /api/admin/primitives", adminMw.RequireAdmin(app.adminHandler.HandleCreatePrimitive))
+	mux.HandleFunc("PUT /api/admin/primitives/{id}", adminMw.RequireAdmin(app.adminHandler.HandleUpdatePrimitive))
+	mux.HandleFunc("DELETE /api/admin/primitives/{id}", adminMw.RequireAdmin(app.adminHandler.HandleDeletePrimitive))
+	
+	// Admin - Primitive Syntax
+	mux.HandleFunc("GET /api/admin/primitives/{primitiveId}/syntax", adminMw.RequireAdmin(app.adminHandler.HandleListSyntax))
+	mux.HandleFunc("POST /api/admin/primitives/{primitiveId}/syntax", adminMw.RequireAdmin(app.adminHandler.HandleUpsertSyntax))
+	
+	// Admin - Exercises CRUD
+	mux.HandleFunc("GET /api/admin/exercises", adminMw.RequireAdmin(app.adminHandler.HandleListExercises))
+	mux.HandleFunc("POST /api/admin/exercises", adminMw.RequireAdmin(app.adminHandler.HandleCreateExercise))
+	mux.HandleFunc("PUT /api/admin/exercises/{id}", adminMw.RequireAdmin(app.adminHandler.HandleUpdateExercise))
+	mux.HandleFunc("DELETE /api/admin/exercises/{id}", adminMw.RequireAdmin(app.adminHandler.HandleDeleteExercise))
+	
+	// Admin - Exercise Starter Code
+	mux.HandleFunc("GET /api/admin/exercises/{exerciseId}/starter-code", adminMw.RequireAdmin(app.adminHandler.HandleListStarterCode))
+	mux.HandleFunc("POST /api/admin/exercises/{exerciseId}/starter-code", adminMw.RequireAdmin(app.adminHandler.HandleUpsertStarterCode))
+	
+	// Admin - Exercise Test Cases
+	mux.HandleFunc("GET /api/admin/exercises/{exerciseId}/test-cases", adminMw.RequireAdmin(app.adminHandler.HandleListTestCases))
+	mux.HandleFunc("POST /api/admin/exercises/{exerciseId}/test-cases", adminMw.RequireAdmin(app.adminHandler.HandleCreateTestCase))
+	mux.HandleFunc("DELETE /api/admin/test-cases/{id}", adminMw.RequireAdmin(app.adminHandler.HandleDeleteTestCase))
+	
+	// Admin - Users
+	mux.HandleFunc("GET /api/admin/users", adminMw.RequireAdmin(app.adminHandler.HandleListUsers))
+	mux.HandleFunc("PUT /api/admin/users/{id}/role", adminMw.RequireAdmin(app.adminHandler.HandleUpdateUserRole))
 }
 
 // registerStaticRoutes serves the SvelteKit frontend

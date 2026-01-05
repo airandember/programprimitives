@@ -110,3 +110,13 @@ func InternalError(w http.ResponseWriter) {
 	Error(w, http.StatusInternalServerError, ErrInternal, "An unexpected error occurred")
 }
 
+
+// InternalErrorWithMessage sends a 500 error with custom message
+func InternalErrorWithMessage(w http.ResponseWriter, message string) {
+	Error(w, http.StatusInternalServerError, ErrInternal, message)
+}
+
+// BadRequest sends a 400 bad request response
+func BadRequest(w http.ResponseWriter, message string) {
+	Error(w, http.StatusBadRequest, ErrValidation, message)
+}

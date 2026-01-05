@@ -302,21 +302,25 @@ func (h *Handler) findUserByEmail(email string) *User {
 
 	var user User
 	var createdAt, updatedAt string
-	var lastLoginAt sql.NullString
+	var lastLoginAt, role sql.NullString
 
 	err := h.db.QueryRow(`
 		SELECT id, email, email_verified, password_hash, display_name, avatar_url,
-			preferred_language, theme, subscription_tier, created_at, updated_at, last_login_at
+			role, preferred_language, theme, subscription_tier, created_at, updated_at, last_login_at
 		FROM users WHERE email = ?
 	`, email).Scan(
 		&user.ID, &user.Email, &user.EmailVerified, &user.PasswordHash, &user.DisplayName,
-		&user.AvatarURL, &user.PreferredLanguage, &user.Theme, &user.SubscriptionTier,
+		&user.AvatarURL, &role, &user.PreferredLanguage, &user.Theme, &user.SubscriptionTier,
 		&createdAt, &updatedAt, &lastLoginAt,
 	)
 	if err != nil {
 		return nil
 	}
 
+	user.Role = "user"
+	if role.Valid && role.String != "" {
+		user.Role = role.String
+	}
 	user.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 	if lastLoginAt.Valid {
@@ -335,21 +339,25 @@ func (h *Handler) findUserByID(id string) *User {
 
 	var user User
 	var createdAt, updatedAt string
-	var lastLoginAt sql.NullString
+	var lastLoginAt, role sql.NullString
 
 	err := h.db.QueryRow(`
 		SELECT id, email, email_verified, password_hash, display_name, avatar_url,
-			preferred_language, theme, subscription_tier, created_at, updated_at, last_login_at
+			role, preferred_language, theme, subscription_tier, created_at, updated_at, last_login_at
 		FROM users WHERE id = ?
 	`, id).Scan(
 		&user.ID, &user.Email, &user.EmailVerified, &user.PasswordHash, &user.DisplayName,
-		&user.AvatarURL, &user.PreferredLanguage, &user.Theme, &user.SubscriptionTier,
+		&user.AvatarURL, &role, &user.PreferredLanguage, &user.Theme, &user.SubscriptionTier,
 		&createdAt, &updatedAt, &lastLoginAt,
 	)
 	if err != nil {
 		return nil
 	}
 
+	user.Role = "user"
+	if role.Valid && role.String != "" {
+		user.Role = role.String
+	}
 	user.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	user.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
 	if lastLoginAt.Valid {

@@ -11,6 +11,7 @@ type User struct {
 	PasswordHash      string    `json:"-"` // Never expose in JSON
 	DisplayName       string    `json:"displayName"`
 	AvatarURL         *string   `json:"avatarUrl,omitempty"`
+	Role              string    `json:"role"` // "user" or "admin"
 	PreferredLanguage string    `json:"preferredLanguage"`
 	Theme             string    `json:"theme"`
 	SubscriptionTier  string    `json:"subscriptionTier"`
@@ -26,6 +27,7 @@ type UserPublic struct {
 	EmailVerified     bool      `json:"emailVerified"`
 	DisplayName       string    `json:"displayName"`
 	AvatarURL         *string   `json:"avatarUrl,omitempty"`
+	Role              string    `json:"role"`
 	PreferredLanguage string    `json:"preferredLanguage"`
 	Theme             string    `json:"theme"`
 	SubscriptionTier  string    `json:"subscriptionTier"`
@@ -35,12 +37,17 @@ type UserPublic struct {
 
 // ToPublic converts a User to UserPublic (safe to expose)
 func (u *User) ToPublic() UserPublic {
+	role := u.Role
+	if role == "" {
+		role = "user" // Default role
+	}
 	return UserPublic{
 		ID:                u.ID,
 		Email:             u.Email,
 		EmailVerified:     u.EmailVerified,
 		DisplayName:       u.DisplayName,
 		AvatarURL:         u.AvatarURL,
+		Role:              role,
 		PreferredLanguage: u.PreferredLanguage,
 		Theme:             u.Theme,
 		SubscriptionTier:  u.SubscriptionTier,

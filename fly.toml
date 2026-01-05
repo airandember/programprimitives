@@ -19,6 +19,10 @@ primary_region = 'iad'
   cpu_kind = 'shared'
   cpus = 1
 
+[mounts]
+  source = "data"
+  destination = "/data"
+
 # Services configuration (required for ACME HTTP-01 cert validation)
 [[services]]
   internal_port = 8080
