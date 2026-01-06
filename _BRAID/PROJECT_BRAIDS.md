@@ -6,6 +6,22 @@ This document defines our complete BRAID architecture, connecting frontend and b
 
 ---
 
+## 📚 Context Documents
+
+Before making curriculum or content decisions, consult the governing context documents:
+
+| Document | Purpose |
+|----------|---------|
+| [`_CONTEXT/CURRICULUM_HIERARCHY.md`](../_CONTEXT/CURRICULUM_HIERARCHY.md) | Complete tool hierarchy (Tier 0-12), prerequisite chains, refinement paths |
+| [`_CONTEXT/README.md`](../_CONTEXT/README.md) | Index of all context documents |
+
+### The Core Vision
+> **You don't become a master craftsman by buying better tools — you earn refined tools through mastery of the basics.**
+
+All curriculum features should support the **Tool Refinement** metaphor.
+
+---
+
 ## 📦 Core Braids (Development Order)
 
 ### Phase 1: Foundation
@@ -419,3 +435,46 @@ Week 9-10: Conversion & Monetize
 
 *Remember: Each strand should be fully functional end-to-end (API → Database → Store → UI) before moving to the next.*
 
+---
+
+## 🗺️ Curriculum Roadmap
+
+Based on `_CONTEXT/CURRICULUM_HIERARCHY.md`:
+
+### Current Primitives → Correct Tier Mapping
+
+| Primitive | Current | Target Tier | Action |
+|-----------|---------|-------------|--------|
+| variables | 1 | TIER 1 | ✅ Keep |
+| operators | 1 | TIER 1 | ✅ Keep |
+| conditionals | 1 | TIER 2 | Update difficulty |
+| for-loop | 2 | TIER 2 | ✅ Keep |
+| while-loop | 2 | TIER 2 | ✅ Keep |
+| functions | 2 | TIER 4 | Update difficulty |
+| arrays | 2 | TIER 3 | Update difficulty |
+| objects | 2 | TIER 3 | Update difficulty |
+
+### Next Primitives to Add (Priority Order)
+
+**Tier 0-1 (Foundations):**
+- output, comments, data-types
+
+**Tier 2 (Control Flow):**
+- boolean-logic, switch, ternary, break/continue
+
+**Tier 3 (Data Organization):**
+- array-methods, strings, nested-structures
+
+**Tier 4-5 (Functions & Iteration):**
+- scope, parameters, return-values, map, filter, reduce
+
+### Tool Refinement System (Future)
+
+Users will **forge** their tools through demonstrated mastery:
+```
+🪨 STONE → 🪵 WOOD → 🔩 BRONZE → ⚙️ IRON → 🔧 STEEL → ⚡ MASTERED
+```
+
+Refined tools (like `map`) unlock only after forging blunt tools (like `for-loop`).
+
+---
