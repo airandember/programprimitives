@@ -4,9 +4,13 @@
 #
 
 app = 'programprimitives'
-primary_region = 'ord'
+primary_region = 'iad'  # <-- Change to match your volume!
 
 [build]
+
+[mounts]
+  source = "data"
+  destination = "/data"
 
 [http_service]
   internal_port = 8080
@@ -20,4 +24,3 @@ primary_region = 'ord'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 1024

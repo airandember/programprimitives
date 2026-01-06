@@ -1,0 +1,58 @@
+# fly.toml - ProgramPrimitives Configuration
+# See https://fly.io/docs/reference/configuration/
+
+app = 'programprimitives'
+primary_region = 'iad'
+
+[build]
+
+# Environment variables
+[env]
+  ENVIRONMENT = "production"
+  PORT = "8080"
+  DATABASE_PATH = "/data/programprimitives.db"
+  STATIC_DIR = "/app/static"
+
+# VM configuration
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[mounts]
+  source = "data"
+  destination = "/data"
+
+# Services configuration (required for ACME HTTP-01 cert validation)
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+  processes = ["app"]
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # Concurrency limits
+  [services.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+  # Port 80 - HTTP (for ACME validation, redirects to HTTPS)
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  # Port 443 - HTTPS
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  # Health check
+  [[services.http_checks]]
+    interval = 10000
+    timeout = 2000
+    grace_period = "5s"
+    method = "GET"
+    path = "/api/health"
