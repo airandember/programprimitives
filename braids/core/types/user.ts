@@ -14,6 +14,9 @@ export interface User {
 	avatarUrl?: string;
 	emailVerified: boolean;
 	
+	// Role
+	role: 'user' | 'admin';
+	
 	// Preferences
 	preferredLanguage: Language;
 	theme: 'light' | 'dark' | 'system';

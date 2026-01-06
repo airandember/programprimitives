@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import { user, isAuthenticated } from '$lib/stores/auth';
+	import { isAdmin } from '$lib/stores/admin';
 	import { progress } from '$lib/stores/progress';
 	import { getLevelTitle } from '$lib/stores/gamification';
 	import {
@@ -13,7 +14,8 @@
 		BarChart3,
 		Trophy,
 		Flame,
-		Zap
+		Zap,
+		Shield
 	} from 'lucide-svelte';
 
 	// Reactive progress values
@@ -99,6 +101,18 @@
 						</div>
 						<div class="badge badge-primary">Lvl {currentLevel}</div>
 						</div>
+
+						<!-- Admin Link -->
+						{#if $isAdmin}
+							<a 
+								href="/admin" 
+								class="btn btn-ghost btn-sm text-red-400 hover:bg-red-500/10"
+								title="Admin Panel"
+							>
+								<Shield size={18} />
+								<span class="hidden lg:inline">Admin</span>
+							</a>
+						{/if}
 
 						<!-- User Menu -->
 						<div class="relative">

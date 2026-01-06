@@ -39,6 +39,24 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T |
 }
 
 export const api = {
+	// Generic methods for admin and other APIs
+	get: <T>(endpoint: string) => fetchAPI<T>(endpoint),
+	
+	post: <T>(endpoint: string, data?: any) =>
+		fetchAPI<T>(endpoint, {
+			method: 'POST',
+			body: data ? JSON.stringify(data) : undefined
+		}),
+	
+	put: <T>(endpoint: string, data?: any) =>
+		fetchAPI<T>(endpoint, {
+			method: 'PUT',
+			body: data ? JSON.stringify(data) : undefined
+		}),
+	
+	delete: <T>(endpoint: string) =>
+		fetchAPI<T>(endpoint, { method: 'DELETE' }),
+
 	// Auth
 	login: (email: string, password: string) =>
 		fetchAPI('/api/auth/login', {
