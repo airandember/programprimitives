@@ -4,9 +4,12 @@
 #
 
 app = 'programprimitives'
-primary_region = 'iad'  # <-- Change to match your volume!
+primary_region = 'iad'  
 
 [build]
+
+[env]
+  DATABASE_PATH = "/data/programprimitives.db"
 
 [mounts]
   source = "data"
