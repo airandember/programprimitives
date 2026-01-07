@@ -428,18 +428,95 @@ func (app *App) handleGetProgress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Try to get progress from user_progress table
+	var totalExercisesCompleted, totalPrimitivesMastered, totalTimeSpentMinutes, totalXp, currentLevel int
+	var currentDailyStreak, longestDailyStreak int
+	var lastActivityAt sql.NullString
+
+	err := app.db.QueryRow(`
+		SELECT 
+			total_exercises_completed, total_primitives_mastered, total_time_spent_minutes,
+			total_xp, current_level, current_daily_streak, longest_daily_streak, last_activity_at
+		FROM user_progress WHERE user_id = ?
+	`, user.ID).Scan(
+		&totalExercisesCompleted, &totalPrimitivesMastered, &totalTimeSpentMinutes,
+		&totalXp, &currentLevel, &currentDailyStreak, &longestDailyStreak, &lastActivityAt,
+	)
+
+	if err != nil {
+		// User has no progress record yet - return defaults
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"userId":                  user.ID,
+			"totalExercisesCompleted": 0,
+			"totalPrimitivesMastered": 0,
+			"totalTimeSpentMinutes":   0,
+			"totalXp":                 0,
+			"currentLevel":            1,
+			"currentDailyStreak":      0,
+			"longestDailyStreak":      0,
+			"lastActivityAt":          nil,
+		})
+		return
+	}
+
 	response.JSON(w, http.StatusOK, map[string]interface{}{
-		"userId": user.ID, "totalExercisesCompleted": 15, "totalPrimitivesMastered": 3,
-		"totalTimeSpentMinutes": 245, "totalXp": 1250, "currentLevel": 5,
-		"currentDailyStreak": 7, "longestDailyStreak": 14,
+		"userId":                  user.ID,
+		"totalExercisesCompleted": totalExercisesCompleted,
+		"totalPrimitivesMastered": totalPrimitivesMastered,
+		"totalTimeSpentMinutes":   totalTimeSpentMinutes,
+		"totalXp":                 totalXp,
+		"currentLevel":            currentLevel,
+		"currentDailyStreak":      currentDailyStreak,
+		"longestDailyStreak":      longestDailyStreak,
+		"lastActivityAt":          lastActivityAt.String,
 	})
 }
 
 func (app *App) handleGetMastery(w http.ResponseWriter, r *http.Request) {
-	mastery := []map[string]interface{}{
-		{"primitiveId": "for-loop", "primitiveName": "For Loop", "language": "javascript", "level": 4, "exercisesCompleted": 5, "exercisesAvailable": 6},
-		{"primitiveId": "variables", "primitiveName": "Variables", "language": "javascript", "level": 5, "exercisesCompleted": 4, "exercisesAvailable": 4},
+	user := app.authHandler.GetUserFromSession(r)
+	if user == nil {
+		response.Unauthorized(w, "Please log in to view mastery")
+		return
 	}
+
+	// Get mastery from primitive_mastery table joined with primitives
+	rows, err := app.db.Query(`
+		SELECT 
+			pm.primitive_id, p.name, pm.language, pm.mastery_level,
+			pm.exercises_completed, pm.exercises_available, pm.average_score
+		FROM primitive_mastery pm
+		JOIN primitives p ON pm.primitive_id = p.id
+		WHERE pm.user_id = ?
+		ORDER BY pm.mastery_level DESC, p.name ASC
+	`, user.ID)
+
+	if err != nil {
+		response.JSON(w, http.StatusOK, []map[string]interface{}{})
+		return
+	}
+	defer rows.Close()
+
+	mastery := []map[string]interface{}{}
+	for rows.Next() {
+		var primitiveId, primitiveName, language string
+		var level, exercisesCompleted, exercisesAvailable int
+		var averageScore float64
+
+		if err := rows.Scan(&primitiveId, &primitiveName, &language, &level, &exercisesCompleted, &exercisesAvailable, &averageScore); err != nil {
+			continue
+		}
+
+		mastery = append(mastery, map[string]interface{}{
+			"primitiveId":        primitiveId,
+			"primitiveName":      primitiveName,
+			"language":           language,
+			"level":              level,
+			"exercisesCompleted": exercisesCompleted,
+			"exercisesAvailable": exercisesAvailable,
+			"averageScore":       averageScore,
+		})
+	}
+
 	response.JSON(w, http.StatusOK, mastery)
 }
 
@@ -448,20 +525,137 @@ func (app *App) handleGetMastery(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func (app *App) handleListAchievements(w http.ResponseWriter, r *http.Request) {
-	achievements := []map[string]interface{}{
-		{"id": "first-blood", "name": "First Blood", "description": "Complete your first exercise", "icon": "🎯", "rarity": "common", "xpReward": 25, "isUnlocked": true},
-		{"id": "streak-7", "name": "Week Warrior", "description": "7-day streak", "icon": "🔥", "rarity": "common", "xpReward": 100, "isUnlocked": true},
-		{"id": "streak-30", "name": "Month Master", "description": "30-day streak", "icon": "🏆", "rarity": "rare", "xpReward": 500, "isUnlocked": false},
+	user := app.authHandler.GetUserFromSession(r)
+	
+	// Get all achievements with user unlock status
+	rows, err := app.db.Query(`
+		SELECT 
+			a.id, a.name, a.description, a.icon, a.category, a.rarity, a.xp_reward,
+			CASE WHEN ua.id IS NOT NULL THEN 1 ELSE 0 END as is_unlocked,
+			ua.unlocked_at
+		FROM achievements a
+		LEFT JOIN user_achievements ua ON a.id = ua.achievement_id AND ua.user_id = ?
+		ORDER BY a.category, a.rarity DESC
+	`, func() string {
+		if user != nil {
+			return user.ID
+		}
+		return ""
+	}())
+
+	if err != nil {
+		// Return empty array if query fails
+		response.JSON(w, http.StatusOK, []map[string]interface{}{})
+		return
 	}
+	defer rows.Close()
+
+	achievements := []map[string]interface{}{}
+	for rows.Next() {
+		var id, name, description, icon, category, rarity string
+		var xpReward, isUnlocked int
+		var unlockedAt sql.NullString
+
+		if err := rows.Scan(&id, &name, &description, &icon, &category, &rarity, &xpReward, &isUnlocked, &unlockedAt); err != nil {
+			continue
+		}
+
+		ach := map[string]interface{}{
+			"id":          id,
+			"name":        name,
+			"description": description,
+			"icon":        icon,
+			"category":    category,
+			"rarity":      rarity,
+			"xpReward":    xpReward,
+			"isUnlocked":  isUnlocked == 1,
+		}
+		if unlockedAt.Valid {
+			ach["unlockedAt"] = unlockedAt.String
+		}
+		achievements = append(achievements, ach)
+	}
+
+	// If no achievements in DB, return catalog defaults
+	if len(achievements) == 0 {
+		achievements = getDefaultAchievementCatalog()
+	}
+
 	response.JSON(w, http.StatusOK, achievements)
 }
 
 func (app *App) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	period := r.PathValue("period")
-	leaderboard := []map[string]interface{}{
-		{"rank": 1, "displayName": "CodeMaster", "xp": 15000, "level": 42, "period": period},
-		{"rank": 2, "displayName": "LoopNinja", "xp": 12500, "level": 38, "period": period},
-		{"rank": 3, "displayName": "FunctionFan", "xp": 11000, "level": 35, "period": period},
+	
+	// Build query based on period
+	var query string
+	switch period {
+	case "weekly":
+		query = `
+			SELECT u.display_name, up.total_xp, up.current_level
+			FROM user_progress up
+			JOIN users u ON up.user_id = u.id
+			WHERE up.last_activity_at >= datetime('now', '-7 days')
+			ORDER BY up.total_xp DESC
+			LIMIT 10
+		`
+	case "monthly":
+		query = `
+			SELECT u.display_name, up.total_xp, up.current_level
+			FROM user_progress up
+			JOIN users u ON up.user_id = u.id
+			WHERE up.last_activity_at >= datetime('now', '-30 days')
+			ORDER BY up.total_xp DESC
+			LIMIT 10
+		`
+	default: // all-time
+		query = `
+			SELECT u.display_name, up.total_xp, up.current_level
+			FROM user_progress up
+			JOIN users u ON up.user_id = u.id
+			ORDER BY up.total_xp DESC
+			LIMIT 10
+		`
 	}
+
+	rows, err := app.db.Query(query)
+	if err != nil {
+		response.JSON(w, http.StatusOK, []map[string]interface{}{})
+		return
+	}
+	defer rows.Close()
+
+	leaderboard := []map[string]interface{}{}
+	rank := 1
+	for rows.Next() {
+		var displayName string
+		var xp, level int
+
+		if err := rows.Scan(&displayName, &xp, &level); err != nil {
+			continue
+		}
+
+		leaderboard = append(leaderboard, map[string]interface{}{
+			"rank":        rank,
+			"displayName": displayName,
+			"xp":          xp,
+			"level":       level,
+			"period":      period,
+		})
+		rank++
+	}
+
 	response.JSON(w, http.StatusOK, leaderboard)
+}
+
+// getDefaultAchievementCatalog returns the static achievement list
+func getDefaultAchievementCatalog() []map[string]interface{} {
+	return []map[string]interface{}{
+		{"id": "first-steps", "name": "First Steps", "description": "Complete your first exercise", "icon": "🎯", "category": "completion", "rarity": "common", "xpReward": 50, "isUnlocked": false},
+		{"id": "on-fire", "name": "On Fire", "description": "Complete 5 exercises in one day", "icon": "🔥", "category": "completion", "rarity": "uncommon", "xpReward": 100, "isUnlocked": false},
+		{"id": "week-warrior", "name": "Week Warrior", "description": "7-day streak", "icon": "📆", "category": "streak", "rarity": "uncommon", "xpReward": 100, "isUnlocked": false},
+		{"id": "monthly-master", "name": "Monthly Master", "description": "30-day streak", "icon": "🗓️", "category": "streak", "rarity": "epic", "xpReward": 500, "isUnlocked": false},
+		{"id": "scholar", "name": "Scholar", "description": "Master 3 primitives", "icon": "📚", "category": "mastery", "rarity": "rare", "xpReward": 300, "isUnlocked": false},
+		{"id": "master", "name": "Master", "description": "Reach level 5 mastery on any primitive", "icon": "👑", "category": "mastery", "rarity": "rare", "xpReward": 250, "isUnlocked": false},
+	}
 }

@@ -130,140 +130,12 @@ const defaultProgress: UserProgress = {
 	recentActivity: [],
 };
 
-// Mock data for demo
-const mockProgress: UserProgress = {
-	userId: 'demo-user',
-	totalExercisesCompleted: 23,
-	totalExercisesAttempted: 31,
-	totalTimeSpentMinutes: 245,
-	totalXp: 1850,
-	currentLevel: 4,
-	currentDailyStreak: 12,
-	longestDailyStreak: 23,
-	lastActivityAt: new Date().toISOString(),
-	mastery: [
-		{
-			primitiveId: 'variables',
-			language: 'javascript',
-			level: 5,
-			exercisesCompleted: 5,
-			exercisesAvailable: 5,
-			totalAttempts: 6,
-			averageScore: 98,
-			bestScore: 100,
-			commonErrors: [],
-		},
-		{
-			primitiveId: 'conditionals',
-			language: 'javascript',
-			level: 4,
-			exercisesCompleted: 4,
-			exercisesAvailable: 5,
-			totalAttempts: 7,
-			averageScore: 89,
-			bestScore: 95,
-			commonErrors: ['logic'],
-			suggestedReview: 'Review comparison operators (==, ===, >, <)',
-		},
-		{
-			primitiveId: 'for-loop',
-			language: 'javascript',
-			level: 3,
-			exercisesCompleted: 3,
-			exercisesAvailable: 6,
-			totalAttempts: 8,
-			averageScore: 82,
-			bestScore: 90,
-			commonErrors: ['logic', 'edge-case'],
-			suggestedReview: 'Practice off-by-one scenarios',
-		},
-		{
-			primitiveId: 'while-loop',
-			language: 'javascript',
-			level: 2,
-			exercisesCompleted: 2,
-			exercisesAvailable: 4,
-			totalAttempts: 5,
-			averageScore: 75,
-			bestScore: 85,
-			commonErrors: ['logic'],
-		},
-		{
-			primitiveId: 'functions',
-			language: 'javascript',
-			level: 3,
-			exercisesCompleted: 3,
-			exercisesAvailable: 5,
-			totalAttempts: 5,
-			averageScore: 85,
-			bestScore: 92,
-			commonErrors: [],
-		},
-		{
-			primitiveId: 'arrays',
-			language: 'javascript',
-			level: 2,
-			exercisesCompleted: 2,
-			exercisesAvailable: 6,
-			totalAttempts: 4,
-			averageScore: 78,
-			bestScore: 88,
-			commonErrors: ['edge-case'],
-			suggestedReview: 'Remember to check array bounds',
-		},
-	],
-	errorPatterns: [
-		{
-			errorType: 'logic',
-			primitiveId: 'for-loop',
-			occurrences: 5,
-			lastOccurred: new Date(Date.now() - 86400000).toISOString(),
-			description: 'Off-by-one errors in loop conditions',
-			suggestion: 'Use < instead of <= when iterating to array.length',
-			relatedPrinciple: 'Think Step-by-Step',
-		},
-		{
-			errorType: 'edge-case',
-			primitiveId: 'arrays',
-			occurrences: 3,
-			lastOccurred: new Date(Date.now() - 172800000).toISOString(),
-			description: 'Not handling empty arrays',
-			suggestion: 'Always check if array.length > 0 before accessing elements',
-			relatedPrinciple: 'Expect the Unexpected',
-		},
-	],
-	recentActivity: [
-		{
-			id: '1',
-			type: 'exercise_completed',
-			primitiveId: 'for-loop',
-			exerciseId: 'ex-for-003',
-			score: 90,
-			xpEarned: 75,
-			timestamp: new Date(Date.now() - 3600000).toISOString(),
-		},
-		{
-			id: '2',
-			type: 'streak_milestone',
-			xpEarned: 100,
-			timestamp: new Date(Date.now() - 86400000).toISOString(),
-		},
-		{
-			id: '3',
-			type: 'primitive_mastered',
-			primitiveId: 'variables',
-			xpEarned: 250,
-			timestamp: new Date(Date.now() - 172800000).toISOString(),
-		},
-	],
-};
-
 // ============================================
-// Storage Helpers
+// Storage Helpers (for offline cache only)
 // ============================================
 
-function loadProgress(): UserProgress {
-	if (!browser) return mockProgress; // SSR fallback
+function loadCachedProgress(): UserProgress {
+	if (!browser) return defaultProgress;
 	
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
@@ -271,20 +143,67 @@ function loadProgress(): UserProgress {
 			return JSON.parse(stored);
 		}
 	} catch (e) {
-		console.error('Failed to load progress:', e);
+		console.error('Failed to load cached progress:', e);
 	}
 	
-	// Return mock for demo purposes
-	return mockProgress;
+	return defaultProgress;
 }
 
-function saveProgress(progress: UserProgress): void {
+function cacheProgress(progress: UserProgress): void {
 	if (!browser) return;
 	
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 	} catch (e) {
-		console.error('Failed to save progress:', e);
+		console.error('Failed to cache progress:', e);
+	}
+}
+
+// ============================================
+// API Helpers
+// ============================================
+
+async function fetchProgress(): Promise<Partial<UserProgress>> {
+	try {
+		const response = await fetch('/api/progress', {
+			credentials: 'include'
+		});
+		if (!response.ok) {
+			if (response.status === 401) return {}; // Not logged in
+			throw new Error('Failed to fetch progress');
+		}
+		return await response.json();
+	} catch (e) {
+		console.error('Failed to fetch progress:', e);
+		return {};
+	}
+}
+
+async function fetchMastery(): Promise<PrimitiveMastery[]> {
+	try {
+		const response = await fetch('/api/progress/primitives', {
+			credentials: 'include'
+		});
+		if (!response.ok) {
+			if (response.status === 401) return [];
+			throw new Error('Failed to fetch mastery');
+		}
+		const data = await response.json();
+		// Map API response to our interface
+		return (data || []).map((m: any) => ({
+			primitiveId: m.primitiveId,
+			language: m.language || 'javascript',
+			level: m.level || 0,
+			exercisesCompleted: m.exercisesCompleted || 0,
+			exercisesAvailable: m.exercisesAvailable || 0,
+			totalAttempts: m.totalAttempts || 0,
+			averageScore: m.averageScore || 0,
+			bestScore: m.bestScore || 0,
+			commonErrors: [],
+		}));
+	} catch (e) {
+		console.error('Failed to fetch mastery:', e);
+		return [];
 	}
 }
 
@@ -293,13 +212,35 @@ function saveProgress(progress: UserProgress): void {
 // ============================================
 
 function createProgressStore() {
-	const { subscribe, set, update } = writable<UserProgress>(loadProgress());
+	const { subscribe, set, update } = writable<UserProgress>(loadCachedProgress());
 	
-	// Auto-save
-	subscribe(saveProgress);
+	// Auto-cache locally
+	subscribe(cacheProgress);
 	
 	return {
 		subscribe,
+		
+		/**
+		 * Load progress from API
+		 */
+		loadFromApi: async () => {
+			const [progressData, masteryData] = await Promise.all([
+				fetchProgress(),
+				fetchMastery()
+			]);
+			
+			update(state => ({
+				...state,
+				userId: progressData.userId || state.userId,
+				totalExercisesCompleted: progressData.totalExercisesCompleted ?? state.totalExercisesCompleted,
+				totalTimeSpentMinutes: progressData.totalTimeSpentMinutes ?? state.totalTimeSpentMinutes,
+				totalXp: progressData.totalXp ?? state.totalXp,
+				currentLevel: progressData.currentLevel ?? state.currentLevel,
+				currentDailyStreak: progressData.currentDailyStreak ?? state.currentDailyStreak,
+				longestDailyStreak: progressData.longestDailyStreak ?? state.longestDailyStreak,
+				mastery: masteryData.length > 0 ? masteryData : state.mastery,
+			}));
+		},
 		
 		/**
 		 * Record an exercise attempt
