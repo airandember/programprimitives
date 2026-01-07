@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { ChevronRight, ChevronLeft, Clock, Check, BookOpen, ArrowRight, ExternalLink } from 'lucide-svelte';
+	import { ChevronRight, ChevronLeft, Clock, Check, BookOpen, ArrowRight, ExternalLink, Sparkles } from 'lucide-svelte';
 	import type { Lesson, ToolMetaphor } from '@braids/core/types';
+	import { progress as progressStore } from '$lib/stores/progress';
 	
 	const toolId = $page.params.primitive;
 	const lessonId = $page.params.lessonId;
@@ -14,6 +16,8 @@
 	let loading = true;
 	let error = '';
 	let isCompleted = false;
+	let completing = false;
+	let xpAwarded = 0;
 	
 	// Navigation
 	let prevLesson: Lesson | null = null;
@@ -22,11 +26,12 @@
 	
 	onMount(async () => {
 		try {
-			const [lessonRes, allLessonsRes, metaphorRes, docsRes] = await Promise.all([
+			const [lessonRes, allLessonsRes, metaphorRes, docsRes, progressRes] = await Promise.all([
 				fetch(`/api/lessons/${lessonId}`),
 				fetch(`/api/tools/${toolId}/lessons`),
 				fetch(`/api/tools/${toolId}/metaphor`),
-				fetch(`/api/tools/${toolId}/docs`)
+				fetch(`/api/tools/${toolId}/docs`),
+				fetch(`/api/progress/lessons/${toolId}`)
 			]);
 			
 			if (lessonRes.ok) {
@@ -62,6 +67,18 @@
 				const data = await docsRes.json();
 				docs = data.data || data;
 			}
+			
+			// Check if this lesson was already completed
+			if (progressRes.ok) {
+				const progressData = await progressRes.json();
+				const progress = progressData.data || progressData;
+				if (progress.lessons) {
+					const lessonProgress = progress.lessons.find((l: any) => l.id === lessonId);
+					if (lessonProgress?.status === 'completed') {
+						isCompleted = true;
+					}
+				}
+			}
 		} catch (e) {
 			error = 'Failed to load lesson';
 		} finally {
@@ -96,9 +113,45 @@
 		return gradients[phase] || 'from-surface-700 to-surface-800';
 	}
 	
-	function markComplete() {
-		isCompleted = true;
-		// TODO: Call API to mark lesson complete
+	async function markComplete() {
+		if (completing || isCompleted) return;
+		completing = true;
+		
+		try {
+			const res = await fetch(`/api/lessons/${lessonId}/complete`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			
+			if (res.ok) {
+				const data = await res.json();
+				const result = data.data || data;
+				isCompleted = true;
+				xpAwarded = result.xpAwarded || 25;
+				
+				// Refresh progress store to update XP in header
+				progressStore.loadFromApi();
+			} else {
+				// Even if API fails (e.g., not logged in), mark as complete locally
+				isCompleted = true;
+				xpAwarded = 25;
+			}
+		} catch (e) {
+			// Mark complete locally even if request fails
+			isCompleted = true;
+			xpAwarded = 25;
+		} finally {
+			completing = false;
+		}
+	}
+	
+	function goToNextLesson() {
+		if (nextLesson) {
+			goto(`/learn/${toolId}/lessons/${nextLesson.id}`);
+		} else {
+			// All lessons done - go back to tool page
+			goto(`/learn/${toolId}`);
+		}
 	}
 	
 	// Simple markdown renderer (can be replaced with a proper library)
@@ -266,20 +319,48 @@
 				{#if !isCompleted}
 					<button 
 						on:click={markComplete}
-						class="w-full btn btn-primary py-4 text-lg mb-6"
+						disabled={completing}
+						class="w-full btn btn-primary py-4 text-lg mb-6 disabled:opacity-50"
 					>
-						<Check size={20} />
-						Mark as Complete
+						{#if completing}
+							<div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+							Saving...
+						{:else}
+							<Check size={20} />
+							Mark as Complete
+						{/if}
 					</button>
 				{:else}
-					<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-6 flex items-center gap-3">
-						<div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-							<Check size={20} class="text-emerald-400" />
+					<!-- Completion celebration -->
+					<div class="bg-gradient-to-r from-emerald-500/10 via-primary-500/10 to-accent-500/10 border border-emerald-500/30 rounded-xl p-6 mb-6">
+						<div class="flex items-center gap-4 mb-4">
+							<div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+								<Sparkles size={24} class="text-emerald-400" />
+							</div>
+							<div class="flex-1">
+								<h4 class="font-semibold text-lg text-emerald-400">Lesson Completed!</h4>
+								<p class="text-sm text-surface-400">Great job! You're making progress.</p>
+							</div>
+							{#if xpAwarded > 0}
+								<div class="px-4 py-2 bg-accent-500/20 text-accent-400 rounded-full text-lg font-bold animate-bounce">
+									+{xpAwarded} XP
+								</div>
+							{/if}
 						</div>
-						<div>
-							<h4 class="font-medium text-emerald-400">Lesson Completed!</h4>
-							<p class="text-sm text-surface-400">Great job! Continue to the next lesson.</p>
-						</div>
+						
+						<!-- Continue button -->
+						<button 
+							on:click={goToNextLesson}
+							class="w-full btn py-4 text-lg {nextLesson ? 'btn-primary' : 'btn-secondary'}"
+						>
+							{#if nextLesson}
+								Continue to Next Lesson
+								<ArrowRight size={20} />
+							{:else}
+								<Check size={20} />
+								All Done! Back to Tool Overview
+							{/if}
+						</button>
 					</div>
 				{/if}
 				

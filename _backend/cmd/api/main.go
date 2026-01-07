@@ -51,10 +51,11 @@ func main() {
 	}
 	defer database.Close()
 
-	// Run migrations
+	// Run migrations (fail fast on errors)
 	if err := db.RunMigrations(database, "./migrations"); err != nil {
-		log.Printf("Warning: Migration error: %v", err)
+		log.Fatalf("❌ Migration failed: %v", err)
 	}
+	log.Println("✅ All migrations applied successfully")
 
 	// Initialize handlers
 	authHandler := auth.NewHandlerWithDB(database)
@@ -123,6 +124,9 @@ func (app *App) registerAPIRoutes(mux *http.ServeMux) {
 	// Progress routes
 	mux.HandleFunc("GET /api/progress", app.handleGetProgress)
 	mux.HandleFunc("GET /api/progress/primitives", app.handleGetMastery)
+	mux.HandleFunc("GET /api/progress/lessons", app.handleGetLessonProgress)
+	mux.HandleFunc("GET /api/progress/lessons/{toolId}", app.handleGetToolLessonProgress)
+	mux.HandleFunc("POST /api/lessons/{id}/complete", app.handleCompleteLesson)
 
 	// Gamification routes
 	mux.HandleFunc("GET /api/achievements", app.handleListAchievements)
@@ -539,6 +543,239 @@ func (app *App) handleGetMastery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusOK, mastery)
+}
+
+// ============================================
+// Lesson Progress Handlers
+// ============================================
+
+// handleGetLessonProgress returns all lesson progress for the current user
+func (app *App) handleGetLessonProgress(w http.ResponseWriter, r *http.Request) {
+	user := app.authHandler.GetUserFromSession(r)
+	if user == nil {
+		response.Unauthorized(w, "Please log in to view progress")
+		return
+	}
+
+	rows, err := app.db.Query(`
+		SELECT 
+			ulp.lesson_id, ulp.status, ulp.started_at, ulp.completed_at,
+			ulp.time_spent_minutes,
+			l.tool_id, l.title, l.phase
+		FROM user_lesson_progress ulp
+		JOIN lessons l ON ulp.lesson_id = l.id
+		WHERE ulp.user_id = ?
+		ORDER BY l.tool_id, l.sequence_order
+	`, user.ID)
+
+	if err != nil {
+		response.JSON(w, http.StatusOK, []map[string]interface{}{})
+		return
+	}
+	defer rows.Close()
+
+	progress := []map[string]interface{}{}
+	for rows.Next() {
+		var lessonID, status, toolID, title, phase string
+		var startedAt, completedAt sql.NullString
+		var timeSpentMinutes int
+
+		if err := rows.Scan(&lessonID, &status, &startedAt, &completedAt, &timeSpentMinutes, &toolID, &title, &phase); err != nil {
+			continue
+		}
+
+		p := map[string]interface{}{
+			"lessonId":         lessonID,
+			"status":           status,
+			"timeSpentMinutes": timeSpentMinutes,
+			"toolId":           toolID,
+			"title":            title,
+			"phase":            phase,
+		}
+		if startedAt.Valid {
+			p["startedAt"] = startedAt.String
+		}
+		if completedAt.Valid {
+			p["completedAt"] = completedAt.String
+		}
+		progress = append(progress, p)
+	}
+
+	response.JSON(w, http.StatusOK, progress)
+}
+
+// handleGetToolLessonProgress returns lesson progress for a specific tool
+func (app *App) handleGetToolLessonProgress(w http.ResponseWriter, r *http.Request) {
+	toolID := r.PathValue("toolId")
+	user := app.authHandler.GetUserFromSession(r)
+	
+	// Get all lessons for this tool
+	lessonsRows, err := app.db.Query(`
+		SELECT id, slug, title, phase, sequence_order, estimated_minutes
+		FROM lessons
+		WHERE tool_id = ? AND is_published = 1
+		ORDER BY sequence_order
+	`, toolID)
+	if err != nil {
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"toolId":    toolID,
+			"lessons":   []interface{}{},
+			"completed": 0,
+			"total":     0,
+		})
+		return
+	}
+	defer lessonsRows.Close()
+
+	type lessonInfo struct {
+		ID               string `json:"id"`
+		Slug             string `json:"slug"`
+		Title            string `json:"title"`
+		Phase            string `json:"phase"`
+		SequenceOrder    int    `json:"sequenceOrder"`
+		EstimatedMinutes int    `json:"estimatedMinutes"`
+		Status           string `json:"status"`
+		CompletedAt      string `json:"completedAt,omitempty"`
+	}
+
+	lessons := []lessonInfo{}
+	for lessonsRows.Next() {
+		var l lessonInfo
+		if err := lessonsRows.Scan(&l.ID, &l.Slug, &l.Title, &l.Phase, &l.SequenceOrder, &l.EstimatedMinutes); err != nil {
+			continue
+		}
+		l.Status = "locked"
+		lessons = append(lessons, l)
+	}
+
+	// If user is logged in, get their progress
+	completedCount := 0
+	if user != nil {
+		progressRows, err := app.db.Query(`
+			SELECT lesson_id, status, completed_at
+			FROM user_lesson_progress
+			WHERE user_id = ?
+		`, user.ID)
+		if err == nil {
+			defer progressRows.Close()
+			
+			progressMap := make(map[string]struct {
+				Status      string
+				CompletedAt sql.NullString
+			})
+			for progressRows.Next() {
+				var lessonID, status string
+				var completedAt sql.NullString
+				if err := progressRows.Scan(&lessonID, &status, &completedAt); err == nil {
+					progressMap[lessonID] = struct {
+						Status      string
+						CompletedAt sql.NullString
+					}{status, completedAt}
+				}
+			}
+
+			// Update lesson statuses
+			for i := range lessons {
+				if p, ok := progressMap[lessons[i].ID]; ok {
+					lessons[i].Status = p.Status
+					if p.CompletedAt.Valid {
+						lessons[i].CompletedAt = p.CompletedAt.String
+					}
+					if p.Status == "completed" {
+						completedCount++
+					}
+				}
+			}
+		}
+	}
+
+	// Set first unlocked lesson to "available" if nothing is in progress
+	hasInProgress := false
+	for _, l := range lessons {
+		if l.Status == "in_progress" {
+			hasInProgress = true
+			break
+		}
+	}
+	if !hasInProgress {
+		for i := range lessons {
+			if lessons[i].Status == "locked" {
+				lessons[i].Status = "available"
+				break
+			}
+		}
+	}
+
+	response.JSON(w, http.StatusOK, map[string]interface{}{
+		"toolId":    toolID,
+		"lessons":   lessons,
+		"completed": completedCount,
+		"total":     len(lessons),
+	})
+}
+
+// handleCompleteLesson marks a lesson as completed for the current user
+func (app *App) handleCompleteLesson(w http.ResponseWriter, r *http.Request) {
+	lessonID := r.PathValue("id")
+	user := app.authHandler.GetUserFromSession(r)
+	if user == nil {
+		response.Unauthorized(w, "Please log in to track progress")
+		return
+	}
+
+	// Verify lesson exists and get its XP reward
+	var toolID string
+	var xpReward int
+	err := app.db.QueryRow("SELECT tool_id, COALESCE(xp_reward, 25) FROM lessons WHERE id = ?", lessonID).Scan(&toolID, &xpReward)
+	if err != nil {
+		response.NotFound(w, "Lesson not found")
+		return
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+	id := user.ID + "-" + lessonID
+
+	// Upsert progress record
+	_, err = app.db.Exec(`
+		INSERT INTO user_lesson_progress (id, user_id, lesson_id, status, started_at, completed_at, created_at, updated_at)
+		VALUES (?, ?, ?, 'completed', ?, ?, ?, ?)
+		ON CONFLICT(user_id, lesson_id) DO UPDATE SET
+			status = 'completed',
+			completed_at = excluded.completed_at,
+			updated_at = excluded.updated_at
+	`, id, user.ID, lessonID, now, now, now, now)
+
+	if err != nil {
+		response.InternalErrorWithMessage(w, "Failed to save progress")
+		return
+	}
+
+	// Update user_tool_mastery
+	masteryID := user.ID + "-" + toolID
+	_, _ = app.db.Exec(`
+		INSERT INTO user_tool_mastery (id, user_id, tool_id, lessons_completed, last_studied_at, created_at, updated_at)
+		VALUES (?, ?, ?, 1, ?, ?, ?)
+		ON CONFLICT(user_id, tool_id) DO UPDATE SET
+			lessons_completed = lessons_completed + 1,
+			last_studied_at = excluded.last_studied_at,
+			updated_at = excluded.updated_at
+	`, masteryID, user.ID, toolID, now, now, now)
+
+	// Update user_progress total XP
+	_, _ = app.db.Exec(`
+		INSERT INTO user_progress (id, user_id, total_xp, current_level, total_exercises_completed, last_activity_at, created_at, updated_at)
+		VALUES (?, ?, ?, 1, 0, ?, ?, ?)
+		ON CONFLICT(user_id) DO UPDATE SET
+			total_xp = total_xp + ?,
+			last_activity_at = excluded.last_activity_at,
+			updated_at = excluded.updated_at
+	`, user.ID, user.ID, xpReward, now, now, now, xpReward)
+
+	response.JSON(w, http.StatusOK, map[string]interface{}{
+		"success":   true,
+		"lessonId":  lessonID,
+		"xpAwarded": xpReward,
+	})
 }
 
 // ============================================

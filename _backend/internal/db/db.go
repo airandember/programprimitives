@@ -101,14 +101,22 @@ func RunMigrations(db *sql.DB, migrationsDir string) error {
 
 		// Split by semicolons and execute each statement
 		statements := strings.Split(string(content), ";")
-		for _, stmt := range statements {
+		for i, stmt := range statements {
 			stmt = strings.TrimSpace(stmt)
 			if stmt == "" || strings.HasPrefix(stmt, "--") {
 				continue
 			}
 			if _, err := tx.Exec(stmt); err != nil {
+				// Handle idempotent errors gracefully (duplicate columns, etc.)
+				errStr := err.Error()
+				if strings.Contains(errStr, "duplicate column") ||
+					strings.Contains(errStr, "already exists") ||
+					strings.Contains(errStr, "UNIQUE constraint failed: _migrations") {
+					log.Printf("   ⚠️  Skipping (already exists): statement %d", i+1)
+					continue
+				}
 				tx.Rollback()
-				return fmt.Errorf("failed to execute migration %s: %w\nStatement: %s", filename, err, stmt[:min(100, len(stmt))])
+				return fmt.Errorf("failed to execute migration %s (statement %d): %w\nStatement: %s", filename, i+1, err, stmt[:min(100, len(stmt))])
 			}
 		}
 
