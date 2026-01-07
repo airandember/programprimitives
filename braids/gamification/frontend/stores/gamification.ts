@@ -291,7 +291,7 @@ function generateDailyChallenges(): DailyChallenge[] {
 			description: 'Complete 3 exercises today',
 			type: 'complete_exercises',
 			target: 3,
-			current: 1,
+			current: 0,
 			xpReward: 75,
 			expiresAt: tomorrow.toISOString(),
 		},
@@ -320,60 +320,31 @@ const defaultState: GamificationState = {
 	lastCheckedAt: new Date().toISOString(),
 };
 
-// Mock data with some unlocked achievements
-const mockState: GamificationState = {
-	userId: 'demo-user',
-	achievements: [
-		{ achievementId: 'first-steps', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 10).toISOString() },
-		{ achievementId: 'on-fire', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-		{ achievementId: 'speed-run', progress: 70, isUnlocked: false },
-		{ achievementId: 'completionist', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 3).toISOString() },
-		{ achievementId: 'perfectionist', progress: 60, isUnlocked: false },
-		{ achievementId: 'polyglot', progress: 66, isUnlocked: false },
-		{ achievementId: 'week-warrior', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 7).toISOString() },
-		{ achievementId: 'monthly-master', progress: 40, isUnlocked: false },
-		{ achievementId: 'century-club', progress: 12, isUnlocked: false },
-		{ achievementId: 'scholar', progress: 66, isUnlocked: false },
-		{ achievementId: 'professor', progress: 33, isUnlocked: false },
-		{ achievementId: 'wizard', progress: 20, isUnlocked: false },
-		{ achievementId: 'master', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-		{ achievementId: 'early-bird', progress: 0, isUnlocked: false },
-		{ achievementId: 'night-owl', progress: 100, isUnlocked: true, unlockedAt: new Date(Date.now() - 86400000 * 8).toISOString() },
-		{ achievementId: 'comeback-kid', progress: 0, isUnlocked: false },
-		{ achievementId: 'versatile', progress: 75, isUnlocked: false },
-	],
-	dailyChallenges: [
-		{
-			id: 'daily-1',
-			title: 'Daily Practice',
-			description: 'Complete 3 exercises today',
-			type: 'complete_exercises',
-			target: 3,
-			current: 1,
-			xpReward: 75,
-			expiresAt: new Date(Date.now() + 43200000).toISOString(), // 12 hours from now
-		},
-		{
-			id: 'daily-2',
-			title: 'High Achiever',
-			description: 'Score 90% or higher on 2 exercises',
-			type: 'score_target',
-			target: 2,
-			current: 1,
-			xpReward: 100,
-			expiresAt: new Date(Date.now() + 43200000).toISOString(),
-		},
-	],
-	weeklyXp: 450,
-	lastCheckedAt: new Date().toISOString(),
-};
-
 // ============================================
-// Storage
+// API Helpers
 // ============================================
 
-function loadState(): GamificationState {
-	if (!browser) return mockState;
+async function fetchAchievements(): Promise<any[]> {
+	try {
+		const response = await fetch('/api/achievements', {
+			credentials: 'include'
+		});
+		if (!response.ok) {
+			return [];
+		}
+		return await response.json();
+	} catch (e) {
+		console.error('Failed to fetch achievements:', e);
+		return [];
+	}
+}
+
+// ============================================
+// Storage (for offline cache)
+// ============================================
+
+function loadCachedState(): GamificationState {
+	if (!browser) return defaultState;
 	
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
@@ -381,19 +352,19 @@ function loadState(): GamificationState {
 			return JSON.parse(stored);
 		}
 	} catch (e) {
-		console.error('Failed to load gamification state:', e);
+		console.error('Failed to load cached gamification state:', e);
 	}
 	
-	return mockState;
+	return defaultState;
 }
 
-function saveState(state: GamificationState): void {
+function cacheState(state: GamificationState): void {
 	if (!browser) return;
 	
 	try {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	} catch (e) {
-		console.error('Failed to save gamification state:', e);
+		console.error('Failed to cache gamification state:', e);
 	}
 }
 
@@ -402,12 +373,39 @@ function saveState(state: GamificationState): void {
 // ============================================
 
 function createGamificationStore() {
-	const { subscribe, set, update } = writable<GamificationState>(loadState());
+	const { subscribe, set, update } = writable<GamificationState>(loadCachedState());
 	
-	subscribe(saveState);
+	subscribe(cacheState);
 	
 	return {
 		subscribe,
+		
+		/**
+		 * Load achievements from API
+		 */
+		loadFromApi: async () => {
+			const apiAchievements = await fetchAchievements();
+			
+			if (apiAchievements.length > 0) {
+				update(state => {
+					// Merge API achievements with our local ACHIEVEMENTS catalog
+					const updatedAchievements = ACHIEVEMENTS.map(ach => {
+						const apiAch = apiAchievements.find((a: any) => a.id === ach.id);
+						return {
+							achievementId: ach.id,
+							progress: apiAch?.isUnlocked ? 100 : 0,
+							isUnlocked: apiAch?.isUnlocked || false,
+							unlockedAt: apiAch?.unlockedAt,
+						};
+					});
+					
+					return {
+						...state,
+						achievements: updatedAchievements,
+					};
+				});
+			}
+		},
 		
 		/**
 		 * Check and unlock achievements based on progress data

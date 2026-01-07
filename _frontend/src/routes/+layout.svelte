@@ -1,10 +1,11 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { user, isAuthenticated } from '$lib/stores/auth';
+	import { user, isAuthenticated, initAuth, isInitialized } from '$lib/stores/auth';
 	import { isAdmin } from '$lib/stores/admin';
 	import { progress } from '$lib/stores/progress';
-	import { getLevelTitle } from '$lib/stores/gamification';
+	import { gamification, getLevelTitle } from '$lib/stores/gamification';
 	import {
 		Menu,
 		X,
@@ -17,6 +18,17 @@
 		Zap,
 		Shield
 	} from 'lucide-svelte';
+
+	// Initialize auth on app load
+	onMount(() => {
+		initAuth();
+	});
+
+	// Load progress/gamification data when user becomes authenticated
+	$: if ($isAuthenticated && $isInitialized) {
+		progress.loadFromApi();
+		gamification.loadFromApi();
+	}
 
 	// Reactive progress values
 	$: currentStreak = $progress.currentDailyStreak;

@@ -283,15 +283,41 @@ func (h *Handler) GetUserFromSession(r *http.Request) *User {
 		return nil
 	}
 
+	// First check in-memory cache
 	h.mu.RLock()
 	session, exists := h.sessions[sessionID]
 	h.mu.RUnlock()
 
-	if !exists || time.Now().After(session.ExpiresAt) {
-		return nil
+	if exists && time.Now().Before(session.ExpiresAt) {
+		return h.findUserByID(session.UserID)
 	}
 
-	return h.findUserByID(session.UserID)
+	// If not in memory, check database (session might have persisted across restart)
+	if h.db != nil {
+		var userID, expiresAtStr string
+		err := h.db.QueryRow(`
+			SELECT user_id, expires_at FROM sessions 
+			WHERE id = ? AND revoked_at IS NULL
+		`, sessionID).Scan(&userID, &expiresAtStr)
+		
+		if err == nil {
+			expiresAt, _ := time.Parse(time.RFC3339, expiresAtStr)
+			if time.Now().Before(expiresAt) {
+				// Restore to memory cache
+				h.mu.Lock()
+				h.sessions[sessionID] = &Session{
+					ID:        sessionID,
+					UserID:    userID,
+					ExpiresAt: expiresAt,
+				}
+				h.mu.Unlock()
+				
+				return h.findUserByID(userID)
+			}
+		}
+	}
+
+	return nil
 }
 
 // findUserByEmail finds a user by email
