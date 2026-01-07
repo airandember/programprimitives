@@ -51,9 +51,24 @@ function createAdminStore() {
 			update(s => ({ ...s, loading: true }));
 			try {
 				const stats = await adminApi.getAdminStats();
-				update(s => ({ ...s, stats, loading: false }));
+				// Ensure stats has all required properties with defaults
+				update(s => ({ 
+					...s, 
+					stats: stats ? {
+						totalUsers: stats.totalUsers ?? 0,
+						totalPrimitives: stats.totalPrimitives ?? 0,
+						totalExercises: stats.totalExercises ?? 0,
+						totalCompletions: stats.totalCompletions ?? 0,
+						activeUsersToday: stats.activeUsersToday ?? 0,
+						activeUsersWeek: stats.activeUsersWeek ?? 0,
+						newUsersToday: stats.newUsersToday ?? 0,
+						newUsersWeek: stats.newUsersWeek ?? 0,
+						premiumSubscribers: stats.premiumSubscribers ?? 0,
+					} : defaultStats,
+					loading: false 
+				}));
 			} catch (e: any) {
-				update(s => ({ ...s, error: e.message, loading: false }));
+				update(s => ({ ...s, stats: defaultStats, error: e.message, loading: false }));
 			}
 		},
 
@@ -63,7 +78,7 @@ function createAdminStore() {
 				const primitives = await adminApi.listPrimitives();
 				update(s => ({ ...s, primitives: primitives || [], loading: false }));
 			} catch (e: any) {
-				update(s => ({ ...s, error: e.message, loading: false }));
+				update(s => ({ ...s, primitives: [], error: e.message, loading: false }));
 			}
 		},
 
@@ -90,7 +105,7 @@ function createAdminStore() {
 				const exercises = await adminApi.listExercises(primitiveId);
 				update(s => ({ ...s, exercises: exercises || [], loading: false }));
 			} catch (e: any) {
-				update(s => ({ ...s, error: e.message, loading: false }));
+				update(s => ({ ...s, exercises: [], error: e.message, loading: false }));
 			}
 		},
 
@@ -117,7 +132,7 @@ function createAdminStore() {
 				const users = await adminApi.listUsers();
 				update(s => ({ ...s, users: users || [], loading: false }));
 			} catch (e: any) {
-				update(s => ({ ...s, error: e.message, loading: false }));
+				update(s => ({ ...s, users: [], error: e.message, loading: false }));
 			}
 		},
 
@@ -132,7 +147,7 @@ function createAdminStore() {
 				const auditLog = await adminApi.getAuditLog();
 				update(s => ({ ...s, auditLog: auditLog || [], loading: false }));
 			} catch (e: any) {
-				update(s => ({ ...s, error: e.message, loading: false }));
+				update(s => ({ ...s, auditLog: [], error: e.message, loading: false }));
 			}
 		}
 	};
