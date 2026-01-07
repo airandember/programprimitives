@@ -757,7 +757,7 @@ func (app *App) handleListLessons(w http.ResponseWriter, r *http.Request) {
 func (app *App) handleGetLesson(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "Lesson ID required")
+		response.BadRequest(w, "Lesson ID required")
 		return
 	}
 	
@@ -798,7 +798,7 @@ func (app *App) handleGetLesson(w http.ResponseWriter, r *http.Request) {
 	)
 	
 	if err != nil {
-		response.Error(w, http.StatusNotFound, "Lesson not found")
+		response.NotFound(w, "Lesson not found")
 		return
 	}
 	
@@ -809,7 +809,7 @@ func (app *App) handleGetLesson(w http.ResponseWriter, r *http.Request) {
 func (app *App) handleGetToolLessons(w http.ResponseWriter, r *http.Request) {
 	toolID := r.PathValue("toolId")
 	if toolID == "" {
-		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		response.BadRequest(w, "Tool ID required")
 		return
 	}
 	
@@ -888,7 +888,7 @@ func (app *App) handleGetToolLessons(w http.ResponseWriter, r *http.Request) {
 func (app *App) handleGetToolMetaphor(w http.ResponseWriter, r *http.Request) {
 	toolID := r.PathValue("toolId")
 	if toolID == "" {
-		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		response.BadRequest(w, "Tool ID required")
 		return
 	}
 	
@@ -942,7 +942,7 @@ func (app *App) handleGetToolMetaphor(w http.ResponseWriter, r *http.Request) {
 func (app *App) handleGetToolDocs(w http.ResponseWriter, r *http.Request) {
 	toolID := r.PathValue("toolId")
 	if toolID == "" {
-		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		response.BadRequest(w, "Tool ID required")
 		return
 	}
 	
