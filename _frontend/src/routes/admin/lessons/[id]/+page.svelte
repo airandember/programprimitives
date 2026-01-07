@@ -254,12 +254,12 @@
 					<h2 class="text-lg font-semibold">Lesson Content (Markdown)</h2>
 					<textarea
 						bind:value={lesson.contentMarkdown}
-						placeholder="# Introduction&#10;&#10;Write your lesson content here using Markdown...&#10;&#10;## Key Concept&#10;&#10;- Point 1&#10;- Point 2&#10;&#10;```javascript&#10;// Code example&#10;for (let i = 0; i < 10; i++) {&#10;  console.log(i);&#10;}&#10;```"
+						placeholder="Write your lesson content here using Markdown..."
 						rows="20"
 						class="w-full px-4 py-3 bg-surface-900 border border-surface-700 rounded-lg focus:outline-none focus:border-primary-500 font-mono text-sm resize-y"
 					></textarea>
 					<p class="text-xs text-surface-500">
-						Supports Markdown: headers, bold, italic, code blocks, lists, links, blockquotes
+						Supports Markdown: # headers, **bold**, *italic*, code blocks, - lists, [links](url), &gt; blockquotes
 					</p>
 				</div>
 			</div>
