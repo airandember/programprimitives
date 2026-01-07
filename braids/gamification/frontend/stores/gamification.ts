@@ -373,9 +373,16 @@ function cacheState(state: GamificationState): void {
 // ============================================
 
 function createGamificationStore() {
-	const { subscribe, set, update } = writable<GamificationState>(loadCachedState());
+	// Start with defaults - API will populate real data
+	const { subscribe, set, update } = writable<GamificationState>(defaultState);
 	
-	subscribe(cacheState);
+	// Only cache after API has loaded real data
+	let initialized = false;
+	subscribe((state) => {
+		if (initialized) {
+			cacheState(state);
+		}
+	});
 	
 	return {
 		subscribe,
@@ -386,25 +393,24 @@ function createGamificationStore() {
 		loadFromApi: async () => {
 			const apiAchievements = await fetchAchievements();
 			
-			if (apiAchievements.length > 0) {
-				update(state => {
-					// Merge API achievements with our local ACHIEVEMENTS catalog
-					const updatedAchievements = ACHIEVEMENTS.map(ach => {
-						const apiAch = apiAchievements.find((a: any) => a.id === ach.id);
-						return {
-							achievementId: ach.id,
-							progress: apiAch?.isUnlocked ? 100 : 0,
-							isUnlocked: apiAch?.isUnlocked || false,
-							unlockedAt: apiAch?.unlockedAt,
-						};
-					});
-					
-					return {
-						...state,
-						achievements: updatedAchievements,
-					};
-				});
-			}
+			// Merge API achievements with our local ACHIEVEMENTS catalog
+			const updatedAchievements = ACHIEVEMENTS.map(ach => {
+				const apiAch = apiAchievements.find((a: any) => a.id === ach.id);
+				return {
+					achievementId: ach.id,
+					progress: apiAch?.isUnlocked ? 100 : 0,
+					isUnlocked: apiAch?.isUnlocked || false,
+					unlockedAt: apiAch?.unlockedAt,
+				};
+			});
+			
+			update(state => ({
+				...state,
+				achievements: updatedAchievements,
+				weeklyXp: 0, // Reset to 0 - will be calculated from API
+			}));
+			
+			initialized = true;
 		},
 		
 		/**

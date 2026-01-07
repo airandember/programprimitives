@@ -212,10 +212,16 @@ async function fetchMastery(): Promise<PrimitiveMastery[]> {
 // ============================================
 
 function createProgressStore() {
-	const { subscribe, set, update } = writable<UserProgress>(loadCachedProgress());
+	// Start with defaults - API will populate real data
+	const { subscribe, set, update } = writable<UserProgress>(defaultProgress);
 	
-	// Auto-cache locally
-	subscribe(cacheProgress);
+	// Auto-cache locally (only after API has loaded real data)
+	let initialized = false;
+	subscribe((state) => {
+		if (initialized) {
+			cacheProgress(state);
+		}
+	});
 	
 	return {
 		subscribe,
@@ -232,14 +238,18 @@ function createProgressStore() {
 			update(state => ({
 				...state,
 				userId: progressData.userId || state.userId,
-				totalExercisesCompleted: progressData.totalExercisesCompleted ?? state.totalExercisesCompleted,
-				totalTimeSpentMinutes: progressData.totalTimeSpentMinutes ?? state.totalTimeSpentMinutes,
-				totalXp: progressData.totalXp ?? state.totalXp,
-				currentLevel: progressData.currentLevel ?? state.currentLevel,
-				currentDailyStreak: progressData.currentDailyStreak ?? state.currentDailyStreak,
-				longestDailyStreak: progressData.longestDailyStreak ?? state.longestDailyStreak,
-				mastery: masteryData.length > 0 ? masteryData : state.mastery,
+				totalExercisesCompleted: progressData.totalExercisesCompleted ?? 0,
+				totalExercisesAttempted: progressData.totalExercisesAttempted ?? 0,
+				totalTimeSpentMinutes: progressData.totalTimeSpentMinutes ?? 0,
+				totalXp: progressData.totalXp ?? 0,
+				currentLevel: progressData.currentLevel ?? 1,
+				currentDailyStreak: progressData.currentDailyStreak ?? 0,
+				longestDailyStreak: progressData.longestDailyStreak ?? 0,
+				mastery: masteryData,
+				errorPatterns: [], // Reset - will be populated by real data
+				recentActivity: [], // Reset - will be populated by real data
 			}));
+			initialized = true;
 		},
 		
 		/**

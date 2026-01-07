@@ -21,6 +21,14 @@
 
 	// Initialize auth on app load
 	onMount(() => {
+		// Clear old mock data cache (one-time migration)
+		const cacheVersion = localStorage.getItem('pp_cache_version');
+		if (cacheVersion !== '2') {
+			localStorage.removeItem('pp_progress');
+			localStorage.removeItem('pp_gamification');
+			localStorage.setItem('pp_cache_version', '2');
+		}
+		
 		initAuth();
 	});
 
