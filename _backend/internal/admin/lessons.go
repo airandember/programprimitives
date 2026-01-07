@@ -16,26 +16,26 @@ import (
 // ============================================
 
 type Lesson struct {
-	ID               string `json:"id"`
-	ToolID           string `json:"toolId"`
-	Slug             string `json:"slug"`
-	Title            string `json:"title"`
-	Description      string `json:"description"`
-	Phase            string `json:"phase"`
-	PhaseOrder       int    `json:"phaseOrder"`
-	SequenceOrder    int    `json:"sequenceOrder"`
-	MetaphorProgress string `json:"metaphorProgress,omitempty"`
-	ContentMarkdown  string `json:"contentMarkdown,omitempty"`
-	VisualElements   string `json:"visualElements,omitempty"`
-	EstimatedMinutes int    `json:"estimatedMinutes"`
+	ID               string  `json:"id"`
+	ToolID           string  `json:"toolId"`
+	Slug             string  `json:"slug"`
+	Title            string  `json:"title"`
+	Description      string  `json:"description"`
+	Phase            string  `json:"phase"`
+	PhaseOrder       int     `json:"phaseOrder"`
+	SequenceOrder    int     `json:"sequenceOrder"`
+	MetaphorProgress string  `json:"metaphorProgress,omitempty"`
+	ContentMarkdown  string  `json:"contentMarkdown,omitempty"`
+	VisualElements   string  `json:"visualElements,omitempty"`
+	EstimatedMinutes int     `json:"estimatedMinutes"`
 	DifficultyMod    float64 `json:"difficultyModifier"`
-	IsPremium        bool   `json:"isPremium"`
-	IsPublished      bool   `json:"isPublished"`
-	LastEditedBy     string `json:"lastEditedBy,omitempty"`
-	LastEditedAt     string `json:"lastEditedAt,omitempty"`
-	Version          int    `json:"version"`
-	CreatedAt        string `json:"createdAt"`
-	UpdatedAt        string `json:"updatedAt"`
+	IsPremium        bool    `json:"isPremium"`
+	IsPublished      bool    `json:"isPublished"`
+	LastEditedBy     string  `json:"lastEditedBy,omitempty"`
+	LastEditedAt     string  `json:"lastEditedAt,omitempty"`
+	Version          int     `json:"version"`
+	CreatedAt        string  `json:"createdAt"`
+	UpdatedAt        string  `json:"updatedAt"`
 }
 
 type LessonInput struct {
@@ -90,7 +90,7 @@ type LanguageDoc struct {
 func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 	toolID := r.URL.Query().Get("toolId")
 	phase := r.URL.Query().Get("phase")
-	
+
 	query := `
 		SELECT id, tool_id, slug, title, description, phase, 
 		       COALESCE(phase_order, 1), sequence_order, 
@@ -108,7 +108,7 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 		WHERE 1=1
 	`
 	args := []interface{}{}
-	
+
 	if toolID != "" {
 		query += " AND tool_id = ?"
 		args = append(args, toolID)
@@ -117,16 +117,16 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 		query += " AND phase = ?"
 		args = append(args, phase)
 	}
-	
+
 	query += " ORDER BY tool_id, sequence_order"
-	
+
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to fetch lessons")
+		response.InternalErrorWithMessage(w, "Failed to fetch lessons")
 		return
 	}
 	defer rows.Close()
-	
+
 	lessons := []Lesson{}
 	for rows.Next() {
 		var l Lesson
@@ -143,7 +143,7 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 		}
 		lessons = append(lessons, l)
 	}
-	
+
 	response.JSON(w, http.StatusOK, lessons)
 }
 
@@ -154,10 +154,10 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleGetLesson(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "Lesson ID required")
+		response.BadRequest(w, "Lesson ID required")
 		return
 	}
-	
+
 	var l Lesson
 	err := h.db.QueryRow(`
 		SELECT id, tool_id, slug, title, description, phase, 
@@ -182,16 +182,16 @@ func (h *Handler) HandleGetLesson(w http.ResponseWriter, r *http.Request) {
 		&l.LastEditedBy, &l.LastEditedAt, &l.Version,
 		&l.CreatedAt, &l.UpdatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
-		response.Error(w, http.StatusNotFound, "Lesson not found")
+		response.NotFound(w, "Lesson not found")
 		return
 	}
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to fetch lesson")
+		response.InternalErrorWithMessage(w, "Failed to fetch lesson")
 		return
 	}
-	
+
 	response.JSON(w, http.StatusOK, l)
 }
 
@@ -202,32 +202,32 @@ func (h *Handler) HandleGetLesson(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleCreateLesson(w http.ResponseWriter, r *http.Request) {
 	var input LessonInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid JSON")
+		response.BadRequest(w, "Invalid JSON")
 		return
 	}
-	
+
 	// Validate required fields
 	if input.ToolID == "" || input.Slug == "" || input.Title == "" {
-		response.Error(w, http.StatusBadRequest, "toolId, slug, and title are required")
+		response.BadRequest(w, "toolId, slug, and title are required")
 		return
 	}
-	
+
 	// Validate phase
 	if input.Phase != "blueprint" && input.Phase != "crafting" && input.Phase != "mastery" {
-		response.Error(w, http.StatusBadRequest, "phase must be blueprint, crafting, or mastery")
+		response.BadRequest(w, "phase must be blueprint, crafting, or mastery")
 		return
 	}
-	
-	// Get admin user from context
+
+	// Get admin user from session
 	adminID := ""
-	if user := h.authHandler.GetUserFromRequest(r); user != nil {
+	if user := h.authHandler.GetUserFromSession(r); user != nil {
 		adminID = user.ID
 	}
-	
+
 	// Generate ID
 	id := strings.ToLower(input.ToolID + "-" + input.Slug)
 	now := time.Now().UTC().Format(time.RFC3339)
-	
+
 	_, err := h.db.Exec(`
 		INSERT INTO lessons (
 			id, tool_id, slug, title, description, phase, phase_order,
@@ -242,19 +242,19 @@ func (h *Handler) HandleCreateLesson(w http.ResponseWriter, r *http.Request) {
 		input.DifficultyMod, input.IsPremium, input.IsPublished,
 		adminID, now, now, now,
 	)
-	
+
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint") {
-			response.Error(w, http.StatusConflict, "Lesson with this slug already exists for this tool")
+			response.Error(w, http.StatusConflict, response.ErrValidation, "Lesson with this slug already exists for this tool")
 			return
 		}
-		response.Error(w, http.StatusInternalServerError, "Failed to create lesson")
+		response.InternalErrorWithMessage(w, "Failed to create lesson")
 		return
 	}
-	
+
 	// Log audit
 	h.logAudit(adminID, "CREATE", "lesson", id, "Created lesson: "+input.Title)
-	
+
 	response.JSON(w, http.StatusCreated, map[string]string{"id": id, "message": "Lesson created"})
 }
 
@@ -265,33 +265,33 @@ func (h *Handler) HandleCreateLesson(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleUpdateLesson(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "Lesson ID required")
+		response.BadRequest(w, "Lesson ID required")
 		return
 	}
-	
+
 	var input LessonInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid JSON")
+		response.BadRequest(w, "Invalid JSON")
 		return
 	}
-	
+
 	// Get current version
 	var currentVersion int
 	err := h.db.QueryRow("SELECT COALESCE(version, 1) FROM lessons WHERE id = ?", id).Scan(&currentVersion)
 	if err == sql.ErrNoRows {
-		response.Error(w, http.StatusNotFound, "Lesson not found")
+		response.NotFound(w, "Lesson not found")
 		return
 	}
-	
-	// Get admin user
+
+	// Get admin user from session
 	adminID := ""
-	if user := h.authHandler.GetUserFromRequest(r); user != nil {
+	if user := h.authHandler.GetUserFromSession(r); user != nil {
 		adminID = user.ID
 	}
-	
+
 	now := time.Now().UTC().Format(time.RFC3339)
 	newVersion := currentVersion + 1
-	
+
 	_, err = h.db.Exec(`
 		UPDATE lessons SET
 			title = ?, description = ?, phase = ?, phase_order = ?,
@@ -306,15 +306,15 @@ func (h *Handler) HandleUpdateLesson(w http.ResponseWriter, r *http.Request) {
 		input.VisualElements, input.EstimatedMinutes, input.DifficultyMod,
 		input.IsPremium, input.IsPublished, adminID, now, newVersion, now, id,
 	)
-	
+
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to update lesson")
+		response.InternalErrorWithMessage(w, "Failed to update lesson")
 		return
 	}
-	
+
 	// Log audit
 	h.logAudit(adminID, "UPDATE", "lesson", id, "Updated lesson: "+input.Title)
-	
+
 	response.JSON(w, http.StatusOK, map[string]interface{}{
 		"message": "Lesson updated",
 		"version": newVersion,
@@ -328,33 +328,33 @@ func (h *Handler) HandleUpdateLesson(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleDeleteLesson(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
-		response.Error(w, http.StatusBadRequest, "Lesson ID required")
+		response.BadRequest(w, "Lesson ID required")
 		return
 	}
-	
+
 	// Get lesson title for audit
 	var title string
 	h.db.QueryRow("SELECT title FROM lessons WHERE id = ?", id).Scan(&title)
-	
+
 	result, err := h.db.Exec("DELETE FROM lessons WHERE id = ?", id)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to delete lesson")
+		response.InternalErrorWithMessage(w, "Failed to delete lesson")
 		return
 	}
-	
+
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
-		response.Error(w, http.StatusNotFound, "Lesson not found")
+		response.NotFound(w, "Lesson not found")
 		return
 	}
-	
+
 	// Log audit
 	adminID := ""
-	if user := h.authHandler.GetUserFromRequest(r); user != nil {
+	if user := h.authHandler.GetUserFromSession(r); user != nil {
 		adminID = user.ID
 	}
 	h.logAudit(adminID, "DELETE", "lesson", id, "Deleted lesson: "+title)
-	
+
 	response.JSON(w, http.StatusOK, map[string]string{"message": "Lesson deleted"})
 }
 
@@ -375,11 +375,11 @@ func (h *Handler) HandleListMetaphors(w http.ResponseWriter, r *http.Request) {
 		ORDER BY tool_id
 	`)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to fetch metaphors")
+		response.InternalErrorWithMessage(w, "Failed to fetch metaphors")
 		return
 	}
 	defer rows.Close()
-	
+
 	metaphors := []ToolMetaphor{}
 	for rows.Next() {
 		var m ToolMetaphor
@@ -395,17 +395,17 @@ func (h *Handler) HandleListMetaphors(w http.ResponseWriter, r *http.Request) {
 		}
 		metaphors = append(metaphors, m)
 	}
-	
+
 	response.JSON(w, http.StatusOK, metaphors)
 }
 
 func (h *Handler) HandleGetMetaphor(w http.ResponseWriter, r *http.Request) {
 	toolID := r.PathValue("toolId")
 	if toolID == "" {
-		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		response.BadRequest(w, "Tool ID required")
 		return
 	}
-	
+
 	var m ToolMetaphor
 	err := h.db.QueryRow(`
 		SELECT id, tool_id, metaphor_name, metaphor_icon,
@@ -424,16 +424,16 @@ func (h *Handler) HandleGetMetaphor(w http.ResponseWriter, r *http.Request) {
 		&m.Stage3Name, &m.Stage3Description,
 		&m.BlueprintVisual, &m.CraftingVisual, &m.MasteryVisual,
 	)
-	
+
 	if err == sql.ErrNoRows {
-		response.Error(w, http.StatusNotFound, "Metaphor not found")
+		response.NotFound(w, "Metaphor not found")
 		return
 	}
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to fetch metaphor")
+		response.InternalErrorWithMessage(w, "Failed to fetch metaphor")
 		return
 	}
-	
+
 	response.JSON(w, http.StatusOK, m)
 }
 
@@ -444,7 +444,7 @@ func (h *Handler) HandleGetMetaphor(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) HandleListDocs(w http.ResponseWriter, r *http.Request) {
 	toolID := r.URL.Query().Get("toolId")
 	languageID := r.URL.Query().Get("languageId")
-	
+
 	query := `
 		SELECT id, language_id, tool_id, doc_url, doc_title, doc_source,
 		       COALESCE(official_syntax, ''), COALESCE(notes, ''), display_order
@@ -452,7 +452,7 @@ func (h *Handler) HandleListDocs(w http.ResponseWriter, r *http.Request) {
 		WHERE 1=1
 	`
 	args := []interface{}{}
-	
+
 	if toolID != "" {
 		query += " AND tool_id = ?"
 		args = append(args, toolID)
@@ -461,16 +461,16 @@ func (h *Handler) HandleListDocs(w http.ResponseWriter, r *http.Request) {
 		query += " AND language_id = ?"
 		args = append(args, languageID)
 	}
-	
+
 	query += " ORDER BY tool_id, language_id, display_order"
-	
+
 	rows, err := h.db.Query(query, args...)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "Failed to fetch docs")
+		response.InternalErrorWithMessage(w, "Failed to fetch docs")
 		return
 	}
 	defer rows.Close()
-	
+
 	docs := []LanguageDoc{}
 	for rows.Next() {
 		var d LanguageDoc
@@ -483,7 +483,7 @@ func (h *Handler) HandleListDocs(w http.ResponseWriter, r *http.Request) {
 		}
 		docs = append(docs, d)
 	}
-	
+
 	response.JSON(w, http.StatusOK, docs)
 }
 
