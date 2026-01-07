@@ -30,8 +30,12 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T |
 			return null;
 		}
 
-		const data = await response.json();
-		return data;
+		const json = await response.json();
+		// API returns { success: true, data: ... } - extract data
+		if (json && typeof json === 'object' && 'data' in json) {
+			return json.data;
+		}
+		return json;
 	} catch (error) {
 		console.warn('API unavailable, using mock data');
 		return null;
