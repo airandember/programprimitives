@@ -11,6 +11,7 @@ export default defineConfig({
 		// Ensure braids folder can find node_modules
 		dedupe: ['svelte', 'zod'],
 	},
+	
 	server: {
 		port: 5173,
 		strictPort: false,

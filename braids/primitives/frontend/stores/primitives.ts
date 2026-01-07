@@ -1,9 +1,11 @@
 // ============================================
-// Primitives Store - Svelte store for primitives catalog
+// Tools (Primitives) Store - Svelte store for tools catalog
+// The Craftsman's Journey
 // ============================================
 
 import { writable, derived } from 'svelte/store';
-import type { Primitive, PrimitiveSyntax } from '@braids/core/types';
+import type { Primitive, PrimitiveSyntax, ToolTier } from '@braids/core/types';
+import { TOOL_TIERS, type TierInfo } from '@braids/core/constants';
 import { 
 	ALL_PRIMITIVES, 
 	ALL_SYNTAX, 
@@ -24,20 +26,26 @@ export const error = writable<string | null>(null);
 export const selectedLanguage = writable<string>('javascript');
 export const searchQuery = writable<string>('');
 export const selectedCategory = writable<string | null>(null);
+export const selectedTier = writable<ToolTier | null>(null);
 
 // ============================================
 // Derived Stores
 // ============================================
 
-/** Get primitives filtered by category */
+/** Get primitives filtered by category, tier, and search */
 export const filteredPrimitives = derived(
-	[primitives, selectedCategory, searchQuery],
-	([$primitives, $category, $query]) => {
+	[primitives, selectedCategory, selectedTier, searchQuery],
+	([$primitives, $category, $tier, $query]) => {
 		let result = $primitives;
 		
 		// Filter by category
 		if ($category) {
 			result = result.filter(p => p.category === $category);
+		}
+		
+		// Filter by tier
+		if ($tier) {
+			result = result.filter(p => p.tier === $tier);
 		}
 		
 		// Filter by search query
@@ -46,7 +54,8 @@ export const filteredPrimitives = derived(
 			result = result.filter(p => 
 				p.name.toLowerCase().includes(q) ||
 				p.description.toLowerCase().includes(q) ||
-				p.category.toLowerCase().includes(q)
+				p.category.toLowerCase().includes(q) ||
+				p.tierName?.toLowerCase().includes(q)
 			);
 		}
 		
@@ -63,6 +72,29 @@ export const primitivesByCategory = derived(primitives, ($primitives) => {
 	}
 	
 	return grouped;
+});
+
+/** Get primitives grouped by tier - The Craftsman's Journey */
+export const primitivesByTier = derived(primitives, ($primitives) => {
+	const grouped: Record<number, { tier: TierInfo; tools: Primitive[] }> = {};
+	
+	for (const tierInfo of TOOL_TIERS) {
+		const tools = $primitives.filter(p => p.tier === tierInfo.tier);
+		if (tools.length > 0) {
+			grouped[tierInfo.tier] = { tier: tierInfo, tools };
+		}
+	}
+	
+	return grouped;
+});
+
+/** Get tiers with tool counts */
+export const tiersWithCounts = derived(primitives, ($primitives) => {
+	return TOOL_TIERS.map(tier => ({
+		...tier,
+		count: $primitives.filter(p => p.tier === tier.tier).length,
+		tools: $primitives.filter(p => p.tier === tier.tier),
+	}));
 });
 
 /** Get free primitives only */
@@ -149,11 +181,19 @@ export function setCategory(category: string | null): void {
 }
 
 /**
+ * Set the selected tier filter
+ */
+export function setTier(tier: ToolTier | null): void {
+	selectedTier.set(tier);
+}
+
+/**
  * Clear all filters
  */
 export function clearFilters(): void {
 	searchQuery.set('');
 	selectedCategory.set(null);
+	selectedTier.set(null);
 }
 
 // ============================================
@@ -161,4 +201,5 @@ export function clearFilters(): void {
 // ============================================
 
 export { CATEGORIES };
+export { TOOL_TIERS };
 

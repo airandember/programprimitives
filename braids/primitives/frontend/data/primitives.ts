@@ -1,18 +1,21 @@
 // ============================================
-// Primitives Seed Data - Frontend Version
+// Tools (Primitives) Seed Data - Frontend Version
+// The Craftsman's Journey
 // ============================================
 
-import type { Primitive, PrimitiveSyntax } from '@braids/core/types';
+import type { Primitive, PrimitiveSyntax, ToolTier, ToolTierName } from '@braids/core/types';
 
 export const ALL_PRIMITIVES: Primitive[] = [
 	// ============================================
-	// FUNDAMENTALS - Variables
+	// TIER 1: STONE TOOLS - Raw Fundamentals
 	// ============================================
 	{
 		id: 'variables',
 		name: 'Variables',
 		category: 'fundamentals',
 		subcategory: 'basics',
+		tier: 1,
+		tierName: 'stone',
 		difficulty: 1,
 		icon: '📦',
 		description: 'Named storage locations that hold data values',
@@ -30,19 +33,48 @@ export const ALL_PRIMITIVES: Primitive[] = [
 			'Not understanding variable hoisting in JavaScript',
 		],
 		prerequisites: [],
-		related: ['constants', 'data-types'],
+		related: ['operators', 'data-types'],
+		isPremium: false,
+	},
+	{
+		id: 'operators',
+		name: 'Operators',
+		category: 'fundamentals',
+		subcategory: 'basics',
+		tier: 1,
+		tierName: 'stone',
+		difficulty: 1,
+		icon: '➕',
+		description: 'Symbols that perform operations on values',
+		whyItMatters: `Operators are the verbs of programming - they make things happen. Addition, comparison, assignment - without operators, you can't compute anything. They're the fundamental building blocks of all expressions.`,
+		bestPractices: [
+			'Understand operator precedence (use parentheses when unsure)',
+			'Use === over == in JavaScript for strict equality',
+			'Learn shorthand operators (+=, -=, ++)',
+			'Be careful with floating-point arithmetic',
+		],
+		pitfalls: [
+			'Confusing = (assignment) with == (comparison)',
+			'Integer division truncation',
+			'Operator precedence surprises',
+			'Floating-point precision issues',
+		],
+		prerequisites: ['variables'],
+		related: ['variables', 'conditionals'],
 		isPremium: false,
 	},
 
 	// ============================================
-	// FUNDAMENTALS - Conditionals
+	// TIER 2: WOOD TOOLS - Structured Basics
 	// ============================================
 	{
 		id: 'conditionals',
 		name: 'Conditionals',
 		category: 'fundamentals',
 		subcategory: 'control-flow',
-		difficulty: 1,
+		tier: 2,
+		tierName: 'wood',
+		difficulty: 2,
 		icon: '🔀',
 		description: 'Execute different code based on whether conditions are true or false',
 		whyItMatters: `Conditionals give your program decision-making ability. They're how programs respond differently to different inputs - the difference between a calculator that just adds and one that can add, subtract, multiply, or divide based on what you choose.`,
@@ -58,19 +90,17 @@ export const ALL_PRIMITIVES: Primitive[] = [
 			'Forgetting to handle the else case',
 			'Complex boolean expressions without parentheses',
 		],
-		prerequisites: ['variables'],
+		prerequisites: ['variables', 'operators'],
 		related: ['switch', 'ternary'],
 		isPremium: false,
 	},
-
-	// ============================================
-	// FUNDAMENTALS - For Loop
-	// ============================================
 	{
 		id: 'for-loop',
 		name: 'For Loop',
 		category: 'fundamentals',
 		subcategory: 'iteration',
+		tier: 2,
+		tierName: 'wood',
 		difficulty: 2,
 		icon: '🔄',
 		description: 'Execute code a specific number of times with a counter',
@@ -91,15 +121,13 @@ export const ALL_PRIMITIVES: Primitive[] = [
 		related: ['while-loop', 'foreach', 'arrays'],
 		isPremium: false,
 	},
-
-	// ============================================
-	// FUNDAMENTALS - While Loop
-	// ============================================
 	{
 		id: 'while-loop',
 		name: 'While Loop',
 		category: 'fundamentals',
 		subcategory: 'iteration',
+		tier: 2,
+		tierName: 'wood',
 		difficulty: 2,
 		icon: '🔁',
 		description: 'Execute code repeatedly while a condition remains true',
@@ -122,42 +150,15 @@ export const ALL_PRIMITIVES: Primitive[] = [
 	},
 
 	// ============================================
-	// FUNDAMENTALS - Functions
-	// ============================================
-	{
-		id: 'functions',
-		name: 'Functions',
-		category: 'fundamentals',
-		subcategory: 'abstraction',
-		difficulty: 2,
-		icon: '⚡',
-		description: 'Reusable blocks of code that perform specific tasks',
-		whyItMatters: `Functions are how you organize and reuse code. Instead of copying the same 10 lines everywhere, write them once in a function. They make code readable (what does calculateTax() do? exactly what it says), testable, and maintainable.`,
-		bestPractices: [
-			'One function, one purpose (Single Responsibility)',
-			'Use descriptive names that describe what it does',
-			'Keep functions short (under 20-30 lines ideally)',
-			'Minimize side effects - prefer returning values',
-		],
-		pitfalls: [
-			'Functions that do too many things',
-			'Deeply nested function calls',
-			'Not handling edge cases or invalid inputs',
-			'Relying on global state instead of parameters',
-		],
-		prerequisites: ['variables'],
-		related: ['parameters', 'return-values', 'scope'],
-		isPremium: false,
-	},
-
-	// ============================================
-	// DATA STRUCTURES - Arrays
+	// TIER 3: BRONZE TOOLS - Data Organization
 	// ============================================
 	{
 		id: 'arrays',
 		name: 'Arrays',
 		category: 'data-structures',
 		subcategory: 'collections',
+		tier: 3,
+		tierName: 'bronze',
 		difficulty: 2,
 		icon: '📊',
 		description: 'Ordered collections of elements accessed by index',
@@ -178,15 +179,13 @@ export const ALL_PRIMITIVES: Primitive[] = [
 		related: ['foreach', 'map-filter', 'objects'],
 		isPremium: false,
 	},
-
-	// ============================================
-	// DATA STRUCTURES - Objects
-	// ============================================
 	{
 		id: 'objects',
 		name: 'Objects',
 		category: 'data-structures',
 		subcategory: 'collections',
+		tier: 3,
+		tierName: 'bronze',
 		difficulty: 2,
 		icon: '🗃️',
 		description: 'Collections of key-value pairs for structured data',
@@ -209,14 +208,47 @@ export const ALL_PRIMITIVES: Primitive[] = [
 	},
 
 	// ============================================
-	// ITERATION - forEach
+	// TIER 4: IRON TOOLS - Abstractions
+	// ============================================
+	{
+		id: 'functions',
+		name: 'Functions',
+		category: 'fundamentals',
+		subcategory: 'abstraction',
+		tier: 4,
+		tierName: 'iron',
+		difficulty: 3,
+		icon: '⚡',
+		description: 'Reusable blocks of code that perform specific tasks',
+		whyItMatters: `Functions are how you organize and reuse code. Instead of copying the same 10 lines everywhere, write them once in a function. They make code readable (what does calculateTax() do? exactly what it says), testable, and maintainable.`,
+		bestPractices: [
+			'One function, one purpose (Single Responsibility)',
+			'Use descriptive names that describe what it does',
+			'Keep functions short (under 20-30 lines ideally)',
+			'Minimize side effects - prefer returning values',
+		],
+		pitfalls: [
+			'Functions that do too many things',
+			'Deeply nested function calls',
+			'Not handling edge cases or invalid inputs',
+			'Relying on global state instead of parameters',
+		],
+		prerequisites: ['variables', 'conditionals'],
+		related: ['parameters', 'return-values', 'scope'],
+		isPremium: false,
+	},
+
+	// ============================================
+	// TIER 4: IRON TOOLS - Abstractions (continued)
 	// ============================================
 	{
 		id: 'foreach',
 		name: 'ForEach',
 		category: 'iteration',
 		subcategory: 'array-methods',
-		difficulty: 2,
+		tier: 4,
+		tierName: 'iron',
+		difficulty: 3,
 		icon: '🔂',
 		description: 'Execute a function for each element in an array',
 		whyItMatters: `forEach is the modern way to iterate arrays. It's cleaner than manual for loops, less error-prone (no off-by-one errors), and expresses intent clearly: "do this for each item."`,
@@ -236,46 +268,15 @@ export const ALL_PRIMITIVES: Primitive[] = [
 		related: ['for-loop', 'map-filter', 'reduce'],
 		isPremium: false,
 	},
-
-	// ============================================
-	// ITERATION - Map & Filter
-	// ============================================
-	{
-		id: 'map-filter',
-		name: 'Map & Filter',
-		category: 'iteration',
-		subcategory: 'array-methods',
-		difficulty: 3,
-		icon: '🎯',
-		description: 'Transform arrays (map) or select elements (filter)',
-		whyItMatters: `Map and filter are functional programming essentials. Map transforms every element (double all prices). Filter selects elements (only items in stock). Together, they replace most manual loops with cleaner, more expressive code.`,
-		bestPractices: [
-			'Map: transform each element, return same-length array',
-			'Filter: return true to keep, false to remove',
-			'Chain them: filter first, then map for efficiency',
-			'Keep callbacks pure (no side effects)',
-		],
-		pitfalls: [
-			'Forgetting that map returns a new array',
-			'Filter callback must return boolean',
-			'Not returning in map callback (returns undefined)',
-			'Chaining too many operations (consider readability)',
-		],
-		prerequisites: ['arrays', 'functions', 'foreach'],
-		related: ['reduce', 'foreach', 'find'],
-		isPremium: false,
-	},
-
-	// ============================================
-	// CONTROL FLOW - Switch
-	// ============================================
 	{
 		id: 'switch',
 		name: 'Switch Statement',
 		category: 'control-flow',
 		subcategory: 'branching',
-		difficulty: 2,
-		icon: '🔀',
+		tier: 4,
+		tierName: 'iron',
+		difficulty: 3,
+		icon: '🎚️',
 		description: 'Multi-way branching based on a single value',
 		whyItMatters: `Switch is your friend when you have one value that could be many things. Day of week? Month name? Menu option? Switch is cleaner than a chain of if/else statements and shows your intent more clearly.`,
 		bestPractices: [
@@ -294,15 +295,13 @@ export const ALL_PRIMITIVES: Primitive[] = [
 		related: ['conditionals', 'ternary'],
 		isPremium: false,
 	},
-
-	// ============================================
-	// CONTROL FLOW - Try/Catch
-	// ============================================
 	{
 		id: 'try-catch',
 		name: 'Try/Catch',
 		category: 'control-flow',
 		subcategory: 'error-handling',
+		tier: 4,
+		tierName: 'iron',
 		difficulty: 3,
 		icon: '🛡️',
 		description: 'Handle errors gracefully without crashing',
@@ -325,42 +324,42 @@ export const ALL_PRIMITIVES: Primitive[] = [
 	},
 
 	// ============================================
-	// ADVANCED - Recursion
+	// TIER 5: STEEL TOOLS - Higher-Order Patterns
 	// ============================================
 	{
-		id: 'recursion',
-		name: 'Recursion',
-		category: 'advanced',
-		subcategory: 'problem-solving',
-		difficulty: 4,
-		icon: '🪆',
-		description: 'Functions that call themselves to solve problems',
-		whyItMatters: `Some problems are naturally recursive: file systems (folders in folders), family trees, parsing nested data. Recursion lets you express these elegantly. It's also key to understanding many algorithms.`,
+		id: 'map-filter',
+		name: 'Map & Filter',
+		category: 'iteration',
+		subcategory: 'array-methods',
+		tier: 5,
+		tierName: 'steel',
+		difficulty: 3,
+		icon: '🎯',
+		description: 'Transform arrays (map) or select elements (filter)',
+		whyItMatters: `Map and filter are functional programming essentials. Map transforms every element (double all prices). Filter selects elements (only items in stock). Together, they replace most manual loops with cleaner, more expressive code.`,
 		bestPractices: [
-			'Always have a base case (stopping condition)',
-			'Ensure each call moves toward the base case',
-			'Consider tail recursion for optimization',
-			'Sometimes iteration is clearer - use judgment',
+			'Map: transform each element, return same-length array',
+			'Filter: return true to keep, false to remove',
+			'Chain them: filter first, then map for efficiency',
+			'Keep callbacks pure (no side effects)',
 		],
 		pitfalls: [
-			'Stack overflow from infinite recursion',
-			'Forgetting the base case',
-			'Not making progress toward base case',
-			'Over-using recursion when loops are simpler',
+			'Forgetting that map returns a new array',
+			'Filter callback must return boolean',
+			'Not returning in map callback (returns undefined)',
+			'Chaining too many operations (consider readability)',
 		],
-		prerequisites: ['functions', 'conditionals'],
-		related: ['functions', 'trees', 'divide-conquer'],
-		isPremium: true,
+		prerequisites: ['arrays', 'functions', 'foreach'],
+		related: ['reduce', 'foreach', 'find'],
+		isPremium: false,
 	},
-
-	// ============================================
-	// ADVANCED - Closures
-	// ============================================
 	{
 		id: 'closures',
 		name: 'Closures',
 		category: 'advanced',
 		subcategory: 'scope',
+		tier: 5,
+		tierName: 'steel',
 		difficulty: 4,
 		icon: '🔒',
 		description: 'Functions that remember their creation context',
@@ -383,13 +382,42 @@ export const ALL_PRIMITIVES: Primitive[] = [
 	},
 
 	// ============================================
-	// ADVANCED - Async/Await
+	// TIER 6: POWER TOOLS - Advanced Concepts
 	// ============================================
+	{
+		id: 'recursion',
+		name: 'Recursion',
+		category: 'advanced',
+		subcategory: 'problem-solving',
+		tier: 6,
+		tierName: 'power',
+		difficulty: 4,
+		icon: '🪆',
+		description: 'Functions that call themselves to solve problems',
+		whyItMatters: `Some problems are naturally recursive: file systems (folders in folders), family trees, parsing nested data. Recursion lets you express these elegantly. It's also key to understanding many algorithms.`,
+		bestPractices: [
+			'Always have a base case (stopping condition)',
+			'Ensure each call moves toward the base case',
+			'Consider tail recursion for optimization',
+			'Sometimes iteration is clearer - use judgment',
+		],
+		pitfalls: [
+			'Stack overflow from infinite recursion',
+			'Forgetting the base case',
+			'Not making progress toward base case',
+			'Over-using recursion when loops are simpler',
+		],
+		prerequisites: ['functions', 'conditionals'],
+		related: ['functions', 'trees', 'divide-conquer'],
+		isPremium: true,
+	},
 	{
 		id: 'async-await',
 		name: 'Async/Await',
 		category: 'advanced',
 		subcategory: 'asynchronous',
+		tier: 6,
+		tierName: 'power',
 		difficulty: 4,
 		icon: '⏳',
 		description: 'Write asynchronous code that looks synchronous',

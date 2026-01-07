@@ -89,6 +89,22 @@ export async function register(input: RegisterInput): Promise<{ success: boolean
  * Login with email/password
  */
 export async function login(input: LoginInput): Promise<{ success: boolean; error?: string }> {
+	// DEV MODE: Local admin bypass
+	if (input.email === 'airAdmin' && input.password === 'enter') {
+		const devAdmin: User = {
+			id: 'dev-admin-001',
+			email: 'airAdmin',
+			displayName: 'Dev Admin',
+			role: 'admin',
+			subscriptionTier: 'premium',
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString()
+		};
+		user.set(devAdmin);
+		isInitialized.set(true);
+		return { success: true };
+	}
+
 	// Validate input
 	const result = loginSchema.safeParse(input);
 	if (!result.success) {

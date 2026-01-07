@@ -1,8 +1,9 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { user, isAuthenticated, initAuth, isInitialized } from '$lib/stores/auth';
+	import { user, isAuthenticated, initAuth, isInitialized, logout } from '$lib/stores/auth';
 	import { isAdmin } from '$lib/stores/admin';
 	import { progress } from '$lib/stores/progress';
 	import { gamification, getLevelTitle } from '$lib/stores/gamification';
@@ -16,7 +17,11 @@
 		Trophy,
 		Flame,
 		Zap,
-		Shield
+		Shield,
+		User,
+		Settings,
+		LogOut,
+		ChevronDown
 	} from 'lucide-svelte';
 
 	// Initialize auth on app load
@@ -44,6 +49,22 @@
 	$: currentLevel = $progress.currentLevel;
 
 	let mobileMenuOpen = false;
+	let userMenuOpen = false;
+
+	// Handle logout
+	async function handleLogout() {
+		userMenuOpen = false;
+		await logout();
+		goto('/');
+	}
+
+	// Close user menu when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (!target.closest('.user-menu-container')) {
+			userMenuOpen = false;
+		}
+	}
 
 	// Public nav items (always visible)
 	const publicNavItems = [
@@ -72,6 +93,8 @@
 <svelte:head>
 	<title>ProgramPrimitives - Master the Tools of Code</title>
 </svelte:head>
+
+<svelte:window on:click={handleClickOutside} />
 
 <div class="min-h-screen flex flex-col">
 	<!-- Navigation -->
@@ -135,14 +158,60 @@
 						{/if}
 
 						<!-- User Menu -->
-						<div class="relative">
-							<button class="flex items-center gap-2 p-1 rounded-full hover:bg-surface-800 transition-colors">
+						<div class="relative user-menu-container">
+							<button 
+								on:click|stopPropagation={() => userMenuOpen = !userMenuOpen}
+								class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-800 transition-colors"
+							>
 								<div
-									class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm"
+									class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm"
 								>
 									{$user?.displayName?.charAt(0).toUpperCase() || 'U'}
 								</div>
+								<ChevronDown size={14} class="text-surface-400 hidden sm:block {userMenuOpen ? 'rotate-180' : ''} transition-transform" />
 							</button>
+
+							<!-- Dropdown Menu -->
+							{#if userMenuOpen}
+								<div class="absolute right-0 mt-2 w-56 bg-surface-900 border border-surface-700 rounded-xl shadow-xl py-2 z-50">
+									<!-- User Info -->
+									<div class="px-4 py-3 border-b border-surface-800">
+										<div class="font-semibold text-sm">{$user?.displayName}</div>
+										<div class="text-xs text-surface-500 truncate">{$user?.email}</div>
+									</div>
+
+									<!-- Menu Items -->
+									<div class="py-1">
+										<a 
+											href="/dashboard" 
+											class="flex items-center gap-3 px-4 py-2 text-sm text-surface-300 hover:bg-surface-800 transition-colors"
+											on:click={() => userMenuOpen = false}
+										>
+											<BarChart3 size={16} />
+											Dashboard
+										</a>
+										<a 
+											href="/settings" 
+											class="flex items-center gap-3 px-4 py-2 text-sm text-surface-300 hover:bg-surface-800 transition-colors"
+											on:click={() => userMenuOpen = false}
+										>
+											<Settings size={16} />
+											Settings
+										</a>
+									</div>
+
+									<!-- Logout -->
+									<div class="border-t border-surface-800 pt-1 mt-1">
+										<button 
+											on:click={handleLogout}
+											class="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 w-full transition-colors"
+										>
+											<LogOut size={16} />
+											Log out
+										</button>
+									</div>
+								</div>
+							{/if}
 						</div>
 					{:else}
 						<a href="/login" class="btn btn-ghost text-sm">Log in</a>
@@ -183,7 +252,7 @@
 					{/each}
 				</div>
 
-				<!-- Mobile Stats -->
+				<!-- Mobile Stats & Actions -->
 				{#if $isAuthenticated}
 					<div class="px-4 py-3 border-t border-surface-800 flex items-center justify-around">
 						<div class="text-center">
@@ -203,6 +272,36 @@
 						<div class="text-center">
 							<div class="font-bold text-primary-400">Lvl {currentLevel}</div>
 							<div class="text-xs text-surface-500">Level</div>
+						</div>
+					</div>
+
+					<!-- Mobile User Section -->
+					<div class="px-4 py-3 border-t border-surface-800">
+						<div class="flex items-center gap-3 mb-3">
+							<div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold">
+								{$user?.displayName?.charAt(0).toUpperCase() || 'U'}
+							</div>
+							<div>
+								<div class="font-semibold text-sm">{$user?.displayName}</div>
+								<div class="text-xs text-surface-500">{$user?.email}</div>
+							</div>
+						</div>
+						<div class="flex gap-2">
+							<a 
+								href="/settings" 
+								class="btn btn-ghost btn-sm flex-1 justify-center"
+								on:click={() => mobileMenuOpen = false}
+							>
+								<Settings size={16} />
+								Settings
+							</a>
+							<button 
+								on:click={() => { mobileMenuOpen = false; handleLogout(); }}
+								class="btn btn-ghost btn-sm flex-1 justify-center text-red-400 hover:bg-red-500/10"
+							>
+								<LogOut size={16} />
+								Log out
+							</button>
 						</div>
 					</div>
 				{/if}
