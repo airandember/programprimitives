@@ -15,9 +15,12 @@
 		{ href: '/admin/audit-log', label: 'Audit Log', icon: History },
 	];
 
+	// Reactive path for navigation highlighting and keying
+	$: currentPath = $page.url.pathname;
+
 	function isActive(href: string): boolean {
-		if (href === '/admin') return $page.url.pathname === '/admin';
-		return $page.url.pathname.startsWith(href);
+		if (href === '/admin') return currentPath === '/admin';
+		return currentPath.startsWith(href);
 	}
 </script>
 
@@ -96,7 +99,9 @@
 
 		<!-- Main Content -->
 		<main class="flex-1 overflow-auto bg-surface-950">
-			<slot />
+			{#key currentPath}
+				<slot />
+			{/key}
 		</main>
 	</div>
 {/if}
