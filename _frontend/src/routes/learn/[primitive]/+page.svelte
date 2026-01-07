@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import {
 		ArrowLeft,
 		Play,
@@ -8,19 +9,71 @@
 		X,
 		Lightbulb,
 		AlertTriangle,
-		BookOpen
+		BookOpen,
+		Hammer,
+		GraduationCap,
+		ExternalLink
 	} from 'lucide-svelte';
 	import { 
 		selectedLanguage, 
 		getPrimitive, 
 		getPrimitiveSyntax,
 		setLanguage,
+		TOOL_TIERS,
 	} from '$lib/stores/primitives';
 	import { SUPPORTED_LANGUAGES } from '@braids/core/constants';
+	import type { ToolMetaphor, Lesson } from '@braids/core/types';
 
 	$: primitiveId = $page.params.primitive;
 	$: primitive = getPrimitive(primitiveId);
 	$: syntax = getPrimitiveSyntax(primitiveId, $selectedLanguage);
+	$: tierInfo = primitive ? TOOL_TIERS.find(t => t.tier === primitive.tier) : null;
+	
+	// Lesson data from API
+	let lessons: { blueprint: Lesson[]; crafting: Lesson[]; mastery: Lesson[] } = {
+		blueprint: [],
+		crafting: [],
+		mastery: []
+	};
+	let metaphor: ToolMetaphor | null = null;
+	let docs: Record<string, any[]> = {};
+	let loadingLessons = true;
+	
+	onMount(async () => {
+		try {
+			const [lessonsRes, metaphorRes, docsRes] = await Promise.all([
+				fetch(`/api/tools/${primitiveId}/lessons`),
+				fetch(`/api/tools/${primitiveId}/metaphor`),
+				fetch(`/api/tools/${primitiveId}/docs`)
+			]);
+			
+			if (lessonsRes.ok) {
+				const data = await lessonsRes.json();
+				const lessonsData = data.data || data;
+				lessons = {
+					blueprint: lessonsData.blueprint || [],
+					crafting: lessonsData.crafting || [],
+					mastery: lessonsData.mastery || []
+				};
+			}
+			
+			if (metaphorRes.ok) {
+				const data = await metaphorRes.json();
+				metaphor = data.data || data;
+			}
+			
+			if (docsRes.ok) {
+				const data = await docsRes.json();
+				docs = data.data || data;
+			}
+		} catch (e) {
+			console.error('Failed to load lessons:', e);
+		} finally {
+			loadingLessons = false;
+		}
+	});
+	
+	$: totalLessons = lessons.blueprint.length + lessons.crafting.length + lessons.mastery.length;
 
 	// Mock exercises (will come from exercises braid)
 	$: exercises = primitive ? [
@@ -38,42 +91,80 @@
 		},
 	] : [];
 
-	// Mock mastery (will come from progress braid)
-	const mockMastery: Record<string, number> = {
-		'variables': 5,
-		'conditionals': 4,
-		'for-loop': 3,
-		'while-loop': 2,
-		'functions': 1,
+	// Mock refinement (will come from progress braid)
+	const mockRefinement: Record<string, string> = {
+		'variables': 'iron',
+		'operators': 'bronze',
+		'conditionals': 'wood',
+		'for-loop': 'wood',
+		'while-loop': 'stone',
+		'arrays': 'stone',
+		'objects': 'unstarted',
+		'functions': 'unstarted',
 	};
-	$: mastery = { level: mockMastery[primitiveId] || 0 };
+	$: refinement = mockRefinement[primitiveId] || 'unstarted';
 
-	function getMasteryName(level: number): string {
-		const names = ['Unexplored', 'Introduced', 'Practicing', 'Familiar', 'Proficient', 'Mastered'];
-		return names[level] || 'Unknown';
+	function getRefinementName(stage: string): string {
+		const names: Record<string, string> = {
+			'unstarted': 'Not Started',
+			'stone': 'Stone',
+			'wood': 'Wood',
+			'bronze': 'Bronze',
+			'iron': 'Iron',
+			'steel': 'Steel',
+			'mastered': 'Mastered'
+		};
+		return names[stage] || 'Unknown';
 	}
 
-	function getMasteryColorClass(level: number): string {
-		const classes = [
-			'text-surface-500',
-			'text-surface-400',
-			'text-yellow-500',
-			'text-orange-500',
-			'text-primary-500',
-			'text-accent-400'
-		];
-		return classes[level] || classes[0];
+	function getRefinementProgress(stage: string): number {
+		const progress: Record<string, number> = {
+			'unstarted': 0,
+			'stone': 17,
+			'wood': 33,
+			'bronze': 50,
+			'iron': 67,
+			'steel': 83,
+			'mastered': 100,
+		};
+		return progress[stage] || 0;
+	}
+
+	function getRefinementColorClass(stage: string): string {
+		const classes: Record<string, string> = {
+			'unstarted': 'text-surface-500',
+			'stone': 'text-stone-400',
+			'wood': 'text-amber-500',
+			'bronze': 'text-orange-500',
+			'iron': 'text-slate-400',
+			'steel': 'text-blue-400',
+			'mastered': 'text-yellow-400'
+		};
+		return classes[stage] || 'text-surface-500';
+	}
+
+	function getRefinementIcon(stage: string): string {
+		const icons: Record<string, string> = {
+			'unstarted': '○',
+			'stone': '🪨',
+			'wood': '🪵',
+			'bronze': '🔩',
+			'iron': '⚙️',
+			'steel': '🔧',
+			'mastered': '✨',
+		};
+		return icons[stage] || '○';
 	}
 </script>
 
 <svelte:head>
-	<title>{primitive?.name || 'Primitive'} | ProgramPrimitives</title>
+	<title>{primitive?.name || 'Tool'} | ProgramPrimitives</title>
 </svelte:head>
 
 {#if primitive}
 	<div class="min-h-screen">
 		<!-- Header -->
-		<div class="bg-gradient-to-b from-primary-500/10 via-surface-900/50 to-transparent py-12">
+		<div class="bg-gradient-to-b from-surface-800 via-surface-900 to-transparent py-12 border-b border-surface-800">
 			<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 				<!-- Back link -->
 				<a
@@ -81,19 +172,24 @@
 					class="inline-flex items-center gap-2 text-surface-400 hover:text-surface-200 mb-6 transition-colors"
 				>
 					<ArrowLeft size={18} />
-					Back to Primitives
+					Back to Tools
 				</a>
 
 				<div class="flex flex-col md:flex-row md:items-start gap-6">
 					<!-- Icon -->
 					<div
-						class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/20 border border-primary-500/30 flex items-center justify-center text-4xl shrink-0"
+						class="w-20 h-20 rounded-2xl bg-gradient-to-br {tierInfo?.bgGradient || 'from-surface-700 to-surface-800'} border border-surface-700 flex items-center justify-center text-4xl shrink-0"
 					>
-						{primitive.icon || '📦'}
+						{primitive.icon || '🔧'}
 					</div>
 
 					<div class="flex-1">
 						<div class="flex items-center gap-3 mb-2">
+							{#if tierInfo}
+								<span class="badge {tierInfo.color} bg-surface-800 border border-surface-700">
+									{tierInfo.icon} {tierInfo.displayName}
+								</span>
+							{/if}
 							<span class="badge badge-primary">{primitive.category}</span>
 							{#if primitive.isPremium}
 								<span class="badge badge-accent">Premium</span>
@@ -103,17 +199,24 @@
 						<p class="text-surface-400 text-lg">{primitive.description}</p>
 					</div>
 
-					<!-- Mastery Card -->
-					<div class="card p-4 min-w-48">
-						<div class="text-sm text-surface-500 mb-1">Your Mastery</div>
-						<div class="flex items-center gap-2 mb-2">
-							<span class="text-2xl font-bold {getMasteryColorClass(mastery.level)}"
-								>Level {mastery.level}</span
-							>
+					<!-- Refinement Card -->
+					<div class="card p-4 min-w-52">
+						<div class="text-sm text-surface-500 mb-1 flex items-center gap-2">
+							<Hammer size={14} />
+							Your Refinement
 						</div>
-						<div class="text-sm text-surface-400">{getMasteryName(mastery.level)}</div>
-						<div class="progress-bar mt-3">
-							<div class="progress-fill" style="width: {(mastery.level / 5) * 100}%"></div>
+						<div class="flex items-center gap-2 mb-2">
+							<span class="text-2xl">{getRefinementIcon(refinement)}</span>
+							<span class="text-xl font-bold {getRefinementColorClass(refinement)}">
+								{getRefinementName(refinement)}
+							</span>
+						</div>
+						<div class="text-xs text-surface-400 mb-3">{getRefinementProgress(refinement)}% complete</div>
+						<div class="h-2 bg-surface-800 rounded-full overflow-hidden">
+							<div 
+								class="h-full bg-gradient-to-r from-stone-500 via-amber-500 via-orange-500 via-slate-400 via-blue-400 to-yellow-400 transition-all duration-500"
+								style="width: {getRefinementProgress(refinement)}%"
+							></div>
 						</div>
 					</div>
 				</div>
@@ -241,8 +344,92 @@
 					</div>
 				</div>
 
-				<!-- Sidebar: Exercises -->
+				<!-- Sidebar -->
 				<div class="space-y-6">
+					<!-- Lessons Section (NEW) -->
+					<div class="card p-6 bg-gradient-to-br from-surface-800/80 to-surface-900/80 border-primary-500/20">
+						<div class="flex items-center gap-3 mb-4">
+							<div class="w-10 h-10 rounded-lg bg-primary-500/20 flex items-center justify-center">
+								<GraduationCap size={20} class="text-primary-400" />
+							</div>
+							<div>
+								<h2 class="text-lg font-semibold">Lessons</h2>
+								<p class="text-xs text-surface-400">
+									{#if loadingLessons}
+										Loading...
+									{:else}
+										{totalLessons} lessons in 3 phases
+									{/if}
+								</p>
+							</div>
+						</div>
+						
+						{#if metaphor}
+							<div class="bg-surface-900/50 rounded-lg p-3 mb-4">
+								<div class="flex items-center gap-2 mb-2">
+									<span class="text-xl">{metaphor.metaphorIcon}</span>
+									<span class="font-medium text-sm">{metaphor.metaphorName}</span>
+								</div>
+								<div class="text-xs text-surface-400">
+									{metaphor.stage1Name} → {metaphor.stage2Name} → {metaphor.stage3Name}
+								</div>
+							</div>
+						{/if}
+						
+						<!-- Phase breakdown -->
+						{#if !loadingLessons && totalLessons > 0}
+							<div class="space-y-2 mb-4">
+								<div class="flex items-center justify-between text-xs">
+									<span class="text-sky-400">📐 Blueprint</span>
+									<span class="text-surface-400">{lessons.blueprint.length} lessons</span>
+								</div>
+								<div class="flex items-center justify-between text-xs">
+									<span class="text-amber-400">🔨 Crafting</span>
+									<span class="text-surface-400">{lessons.crafting.length} lessons</span>
+								</div>
+								<div class="flex items-center justify-between text-xs">
+									<span class="text-emerald-400">🔩 Mastery</span>
+									<span class="text-surface-400">{lessons.mastery.length} lessons</span>
+								</div>
+							</div>
+						{/if}
+						
+						<a
+							href="/learn/{primitive.id}/lessons"
+							class="btn btn-primary w-full justify-center"
+						>
+							Start Learning
+							<ChevronRight size={18} />
+						</a>
+					</div>
+					
+					<!-- Documentation Links -->
+					{#if Object.keys(docs).length > 0}
+						<div class="card p-6">
+							<h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+								<BookOpen size={18} class="text-primary-400" />
+								Official Docs
+							</h2>
+							<div class="space-y-2">
+								{#each Object.entries(docs) as [lang, langDocs]}
+									{#each langDocs.slice(0, 1) as doc}
+										<a
+											href={doc.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-800/50 transition-colors group"
+										>
+											<span class="text-sm font-medium capitalize">{lang}</span>
+											<span class="flex-1 text-xs text-surface-500 truncate">{doc.title}</span>
+											<ExternalLink size={14} class="text-surface-600 group-hover:text-primary-400" />
+										</a>
+									{/each}
+								{/each}
+							</div>
+						</div>
+					{/if}
+					
+					<!-- Practice Exercises -->
 					<div class="card p-6">
 						<h2 class="text-lg font-semibold mb-4">Practice Exercises</h2>
 
@@ -284,21 +471,22 @@
 
 						<a
 							href="/practice?primitive={primitive.id}"
-							class="btn btn-primary w-full mt-4 justify-center"
+							class="btn btn-secondary w-full mt-4 justify-center"
 						>
 							Start Practicing
 							<ChevronRight size={18} />
 						</a>
 					</div>
 
-					<!-- Related Primitives -->
+					<!-- Related Tools -->
 					{#if primitive.related && primitive.related.length > 0}
 						<div class="card p-6">
-							<h2 class="text-lg font-semibold mb-4">Related Primitives</h2>
+							<h2 class="text-lg font-semibold mb-4">Related Tools</h2>
 							<div class="space-y-2">
 								{#each primitive.related.slice(0, 4) as relatedId}
 									{@const related = getPrimitive(relatedId)}
 									{#if related}
+										{@const relatedTier = TOOL_TIERS.find(t => t.tier === related.tier)}
 										<a
 											href="/learn/{relatedId}"
 											class="block p-3 rounded-lg bg-surface-800/50 hover:bg-surface-800 transition-colors"
@@ -306,8 +494,11 @@
 											<div class="flex items-center gap-2">
 												<span class="text-lg">{related.icon}</span>
 												<div class="font-medium text-sm">{related.name}</div>
+												{#if relatedTier}
+													<span class="text-xs {relatedTier.color}">{relatedTier.icon}</span>
+												{/if}
 											</div>
-											<div class="text-xs text-surface-500 mt-1">{related.description}</div>
+											<div class="text-xs text-surface-500 mt-1 line-clamp-1">{related.description}</div>
 										</a>
 									{/if}
 								{/each}
@@ -343,9 +534,9 @@
 	<div class="min-h-screen flex items-center justify-center">
 		<div class="text-center">
 			<div class="text-6xl mb-4">🔍</div>
-			<h2 class="text-2xl font-bold mb-2">Primitive not found</h2>
-			<p class="text-surface-400 mb-6">The primitive "{primitiveId}" doesn't exist.</p>
-			<a href="/learn" class="btn btn-primary">Back to Primitives</a>
+			<h2 class="text-2xl font-bold mb-2">Tool not found</h2>
+			<p class="text-surface-400 mb-6">The tool "{primitiveId}" doesn't exist.</p>
+			<a href="/learn" class="btn btn-primary">Back to Tools</a>
 		</div>
 	</div>
 {/if}

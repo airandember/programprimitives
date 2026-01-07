@@ -163,6 +163,27 @@ func (app *App) registerAPIRoutes(mux *http.ServeMux) {
 	// Admin - Users
 	mux.HandleFunc("GET /api/admin/users", adminMw.RequireAdmin(app.adminHandler.HandleListUsers))
 	mux.HandleFunc("PUT /api/admin/users/{id}/role", adminMw.RequireAdmin(app.adminHandler.HandleUpdateUserRole))
+	
+	// Admin - Lessons CRUD
+	mux.HandleFunc("GET /api/admin/lessons", adminMw.RequireAdmin(app.adminHandler.HandleListLessons))
+	mux.HandleFunc("GET /api/admin/lessons/{id}", adminMw.RequireAdmin(app.adminHandler.HandleGetLesson))
+	mux.HandleFunc("POST /api/admin/lessons", adminMw.RequireAdmin(app.adminHandler.HandleCreateLesson))
+	mux.HandleFunc("PUT /api/admin/lessons/{id}", adminMw.RequireAdmin(app.adminHandler.HandleUpdateLesson))
+	mux.HandleFunc("DELETE /api/admin/lessons/{id}", adminMw.RequireAdmin(app.adminHandler.HandleDeleteLesson))
+	
+	// Admin - Tool Metaphors
+	mux.HandleFunc("GET /api/admin/metaphors", adminMw.RequireAdmin(app.adminHandler.HandleListMetaphors))
+	mux.HandleFunc("GET /api/admin/metaphors/{toolId}", adminMw.RequireAdmin(app.adminHandler.HandleGetMetaphor))
+	
+	// Admin - Language Docs
+	mux.HandleFunc("GET /api/admin/docs", adminMw.RequireAdmin(app.adminHandler.HandleListDocs))
+	
+	// Public Lessons routes (for users)
+	mux.HandleFunc("GET /api/lessons", app.handleListLessons)
+	mux.HandleFunc("GET /api/lessons/{id}", app.handleGetLesson)
+	mux.HandleFunc("GET /api/tools/{toolId}/lessons", app.handleGetToolLessons)
+	mux.HandleFunc("GET /api/tools/{toolId}/metaphor", app.handleGetToolMetaphor)
+	mux.HandleFunc("GET /api/tools/{toolId}/docs", app.handleGetToolDocs)
 }
 
 // registerStaticRoutes serves the SvelteKit frontend
@@ -658,4 +679,308 @@ func getDefaultAchievementCatalog() []map[string]interface{} {
 		{"id": "scholar", "name": "Scholar", "description": "Master 3 primitives", "icon": "📚", "category": "mastery", "rarity": "rare", "xpReward": 300, "isUnlocked": false},
 		{"id": "master", "name": "Master", "description": "Reach level 5 mastery on any primitive", "icon": "👑", "category": "mastery", "rarity": "rare", "xpReward": 250, "isUnlocked": false},
 	}
+}
+
+// ============================================
+// Public Lesson Handlers
+// ============================================
+
+// handleListLessons returns all published lessons
+func (app *App) handleListLessons(w http.ResponseWriter, r *http.Request) {
+	toolID := r.URL.Query().Get("toolId")
+	phase := r.URL.Query().Get("phase")
+	
+	query := `
+		SELECT id, tool_id, slug, title, description, phase, 
+		       COALESCE(phase_order, 1), sequence_order, 
+		       COALESCE(metaphor_progress, ''),
+		       estimated_minutes, 
+		       COALESCE(difficulty_modifier, 0),
+		       is_premium
+		FROM lessons
+		WHERE is_published = 1
+	`
+	args := []interface{}{}
+	
+	if toolID != "" {
+		query += " AND tool_id = ?"
+		args = append(args, toolID)
+	}
+	if phase != "" {
+		query += " AND phase = ?"
+		args = append(args, phase)
+	}
+	
+	query += " ORDER BY tool_id, sequence_order"
+	
+	rows, err := app.db.Query(query, args...)
+	if err != nil {
+		response.JSON(w, http.StatusOK, []map[string]interface{}{})
+		return
+	}
+	defer rows.Close()
+	
+	lessons := []map[string]interface{}{}
+	for rows.Next() {
+		var id, toolID, slug, title, description, phase, metaphorProgress string
+		var phaseOrder, sequenceOrder, estimatedMinutes int
+		var difficultyMod float64
+		var isPremium bool
+		
+		err := rows.Scan(&id, &toolID, &slug, &title, &description, &phase,
+			&phaseOrder, &sequenceOrder, &metaphorProgress, &estimatedMinutes,
+			&difficultyMod, &isPremium)
+		if err != nil {
+			continue
+		}
+		
+		lessons = append(lessons, map[string]interface{}{
+			"id":               id,
+			"toolId":           toolID,
+			"slug":             slug,
+			"title":            title,
+			"description":      description,
+			"phase":            phase,
+			"phaseOrder":       phaseOrder,
+			"sequenceOrder":    sequenceOrder,
+			"metaphorProgress": metaphorProgress,
+			"estimatedMinutes": estimatedMinutes,
+			"difficultyModifier": difficultyMod,
+			"isPremium":        isPremium,
+		})
+	}
+	
+	response.JSON(w, http.StatusOK, lessons)
+}
+
+// handleGetLesson returns a single lesson with full content
+func (app *App) handleGetLesson(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "Lesson ID required")
+		return
+	}
+	
+	var lesson struct {
+		ID               string  `json:"id"`
+		ToolID           string  `json:"toolId"`
+		Slug             string  `json:"slug"`
+		Title            string  `json:"title"`
+		Description      string  `json:"description"`
+		Phase            string  `json:"phase"`
+		PhaseOrder       int     `json:"phaseOrder"`
+		SequenceOrder    int     `json:"sequenceOrder"`
+		MetaphorProgress string  `json:"metaphorProgress"`
+		ContentMarkdown  string  `json:"contentMarkdown"`
+		VisualElements   string  `json:"visualElements"`
+		EstimatedMinutes int     `json:"estimatedMinutes"`
+		DifficultyMod    float64 `json:"difficultyModifier"`
+		IsPremium        bool    `json:"isPremium"`
+	}
+	
+	err := app.db.QueryRow(`
+		SELECT id, tool_id, slug, title, description, phase, 
+		       COALESCE(phase_order, 1), sequence_order, 
+		       COALESCE(metaphor_progress, ''),
+		       COALESCE(content_markdown, ''),
+		       COALESCE(visual_elements, ''),
+		       estimated_minutes, 
+		       COALESCE(difficulty_modifier, 0),
+		       is_premium
+		FROM lessons
+		WHERE id = ? AND is_published = 1
+	`, id).Scan(
+		&lesson.ID, &lesson.ToolID, &lesson.Slug, &lesson.Title,
+		&lesson.Description, &lesson.Phase, &lesson.PhaseOrder,
+		&lesson.SequenceOrder, &lesson.MetaphorProgress, &lesson.ContentMarkdown,
+		&lesson.VisualElements, &lesson.EstimatedMinutes, &lesson.DifficultyMod,
+		&lesson.IsPremium,
+	)
+	
+	if err != nil {
+		response.Error(w, http.StatusNotFound, "Lesson not found")
+		return
+	}
+	
+	response.JSON(w, http.StatusOK, lesson)
+}
+
+// handleGetToolLessons returns all lessons for a specific tool, grouped by phase
+func (app *App) handleGetToolLessons(w http.ResponseWriter, r *http.Request) {
+	toolID := r.PathValue("toolId")
+	if toolID == "" {
+		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		return
+	}
+	
+	rows, err := app.db.Query(`
+		SELECT id, slug, title, description, phase, 
+		       COALESCE(phase_order, 1), sequence_order, 
+		       COALESCE(metaphor_progress, ''),
+		       estimated_minutes, 
+		       COALESCE(difficulty_modifier, 0),
+		       is_premium
+		FROM lessons
+		WHERE tool_id = ? AND is_published = 1
+		ORDER BY sequence_order
+	`, toolID)
+	if err != nil {
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"blueprint": []interface{}{},
+			"crafting":  []interface{}{},
+			"mastery":   []interface{}{},
+		})
+		return
+	}
+	defer rows.Close()
+	
+	blueprint := []map[string]interface{}{}
+	crafting := []map[string]interface{}{}
+	mastery := []map[string]interface{}{}
+	
+	for rows.Next() {
+		var id, slug, title, description, phase, metaphorProgress string
+		var phaseOrder, sequenceOrder, estimatedMinutes int
+		var difficultyMod float64
+		var isPremium bool
+		
+		err := rows.Scan(&id, &slug, &title, &description, &phase,
+			&phaseOrder, &sequenceOrder, &metaphorProgress, &estimatedMinutes,
+			&difficultyMod, &isPremium)
+		if err != nil {
+			continue
+		}
+		
+		lesson := map[string]interface{}{
+			"id":               id,
+			"slug":             slug,
+			"title":            title,
+			"description":      description,
+			"phase":            phase,
+			"phaseOrder":       phaseOrder,
+			"sequenceOrder":    sequenceOrder,
+			"metaphorProgress": metaphorProgress,
+			"estimatedMinutes": estimatedMinutes,
+			"difficultyModifier": difficultyMod,
+			"isPremium":        isPremium,
+		}
+		
+		switch phase {
+		case "blueprint":
+			blueprint = append(blueprint, lesson)
+		case "crafting":
+			crafting = append(crafting, lesson)
+		case "mastery":
+			mastery = append(mastery, lesson)
+		}
+	}
+	
+	response.JSON(w, http.StatusOK, map[string]interface{}{
+		"toolId":    toolID,
+		"blueprint": blueprint,
+		"crafting":  crafting,
+		"mastery":   mastery,
+		"total":     len(blueprint) + len(crafting) + len(mastery),
+	})
+}
+
+// handleGetToolMetaphor returns the metaphor for a tool
+func (app *App) handleGetToolMetaphor(w http.ResponseWriter, r *http.Request) {
+	toolID := r.PathValue("toolId")
+	if toolID == "" {
+		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		return
+	}
+	
+	var metaphor struct {
+		ToolID            string `json:"toolId"`
+		MetaphorName      string `json:"metaphorName"`
+		MetaphorIcon      string `json:"metaphorIcon"`
+		Stage1Name        string `json:"stage1Name"`
+		Stage1Description string `json:"stage1Description"`
+		Stage2Name        string `json:"stage2Name"`
+		Stage2Description string `json:"stage2Description"`
+		Stage3Name        string `json:"stage3Name"`
+		Stage3Description string `json:"stage3Description"`
+		BlueprintVisual   string `json:"blueprintVisual"`
+		CraftingVisual    string `json:"craftingVisual"`
+		MasteryVisual     string `json:"masteryVisual"`
+	}
+	
+	err := app.db.QueryRow(`
+		SELECT tool_id, metaphor_name, metaphor_icon,
+		       stage_1_name, COALESCE(stage_1_description, ''),
+		       stage_2_name, COALESCE(stage_2_description, ''),
+		       stage_3_name, COALESCE(stage_3_description, ''),
+		       COALESCE(blueprint_visual, ''),
+		       COALESCE(crafting_visual, ''),
+		       COALESCE(mastery_visual, '')
+		FROM tool_metaphors
+		WHERE tool_id = ?
+	`, toolID).Scan(
+		&metaphor.ToolID, &metaphor.MetaphorName, &metaphor.MetaphorIcon,
+		&metaphor.Stage1Name, &metaphor.Stage1Description,
+		&metaphor.Stage2Name, &metaphor.Stage2Description,
+		&metaphor.Stage3Name, &metaphor.Stage3Description,
+		&metaphor.BlueprintVisual, &metaphor.CraftingVisual, &metaphor.MasteryVisual,
+	)
+	
+	if err != nil {
+		// Return default if no metaphor found
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"toolId":       toolID,
+			"metaphorName": "Tool",
+			"metaphorIcon": "🔧",
+		})
+		return
+	}
+	
+	response.JSON(w, http.StatusOK, metaphor)
+}
+
+// handleGetToolDocs returns language documentation for a tool
+func (app *App) handleGetToolDocs(w http.ResponseWriter, r *http.Request) {
+	toolID := r.PathValue("toolId")
+	if toolID == "" {
+		response.Error(w, http.StatusBadRequest, "Tool ID required")
+		return
+	}
+	
+	rows, err := app.db.Query(`
+		SELECT language_id, doc_url, doc_title, doc_source,
+		       COALESCE(official_syntax, ''), COALESCE(notes, '')
+		FROM language_docs
+		WHERE tool_id = ?
+		ORDER BY language_id, display_order
+	`, toolID)
+	if err != nil {
+		response.JSON(w, http.StatusOK, map[string]interface{}{})
+		return
+	}
+	defer rows.Close()
+	
+	// Group by language
+	docs := map[string][]map[string]interface{}{}
+	
+	for rows.Next() {
+		var langID, docURL, docTitle, docSource, syntax, notes string
+		err := rows.Scan(&langID, &docURL, &docTitle, &docSource, &syntax, &notes)
+		if err != nil {
+			continue
+		}
+		
+		if docs[langID] == nil {
+			docs[langID] = []map[string]interface{}{}
+		}
+		
+		docs[langID] = append(docs[langID], map[string]interface{}{
+			"url":            docURL,
+			"title":          docTitle,
+			"source":         docSource,
+			"officialSyntax": syntax,
+			"notes":          notes,
+		})
+	}
+	
+	response.JSON(w, http.StatusOK, docs)
 }

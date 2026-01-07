@@ -2,6 +2,43 @@
 
 > **The Core Vision:** You don't become a master craftsman by buying better tools — you **earn** refined tools through mastery of the basics.
 
+---
+
+## 🎯 Core Philosophy
+
+**There are coding tools that are used across every coding language. The difference across languages is syntax, but the principles of use persist. We teach tool use, best practices, and principles that users can then practice in the language of their choice.**
+
+### What This Means
+
+| Concept | Our Approach |
+|---------|--------------|
+| **Tools Are Universal** | A `for` loop, a conditional, a function — these exist in *every* language |
+| **Syntax Is Secondary** | JavaScript's `for (let i = 0; ...)` vs Python's `for i in range(...)` — same tool, different syntax |
+| **Principles Persist** | "Avoid off-by-one errors", "use guard clauses for readability" — true everywhere |
+| **Practice in Your Language** | Learn the concept once, apply it in JS, Python, Go, Rust, or any language you choose |
+
+### The Learning Flow
+
+```
+1. UNDERSTAND THE TOOL (Blueprints)
+   "What is a for loop? Why does it exist? What problems does it solve?"
+   └── Language-agnostic explanation, mental models, principles
+   
+2. SEE THE PATTERNS (Best Practices)
+   "When should I use a for loop vs forEach vs map?"
+   └── Universal decision-making frameworks
+   
+3. LEARN THE SYNTAX (Per Language)
+   "How do I write a for loop in JavaScript?"
+   └── Language-specific syntax, idioms, gotchas
+   
+4. PRACTICE & APPLY
+   "Complete exercises in your chosen language"
+   └── Targeted feedback based on tool mastery AND syntax fluency
+```
+
+---
+
 ## Blueprints
 
 ProgramPrimitives teaches **universal programming tools and strategies** that transcend any single language. We focus on the fundamental building blocks every developer uses to solve problems.
@@ -41,6 +78,251 @@ while (stone) → for (wood) → for...of (bronze) → forEach (iron) → map (s
 ```
 
 Each upgrade is **earned** through demonstrated understanding of the previous level.
+
+---
+
+## Three-Phase Lesson Structure
+
+Every tool follows a **three-phase lesson progression**:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  📐 PHASE 1: BLUEPRINT LESSONS (The WHY)                   │
+│  Understanding the concept - language agnostic             │
+│  Visual: Each lesson draws another line on the blueprint   │
+├────────────────────────────────────────────────────────────┤
+│  🔨 PHASE 2: TOOL CRAFTING LESSONS (The HOW)               │
+│  Building proficiency - hands-on practice                  │
+│  Visual: Gathering materials, shaping, assembling          │
+├────────────────────────────────────────────────────────────┤
+│  🔩 PHASE 3: MASTERY LESSONS (The COMPLETE)                │
+│  Industry standards, cross-language syntax, best practices │
+│  Visual: Each lesson hammers a nail, solidifying mastery   │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Why Three Phases?
+
+| Phase | Focus | Feedback Type |
+|-------|-------|---------------|
+| **Blueprint** | Mental models, the WHY | "You understand when to use loops" |
+| **Crafting** | Syntax & application | "Your loop syntax needs work" |
+| **Mastery** | Patterns & transfer | "Try this pattern instead" |
+
+### Granular Tracking Benefits
+
+- **Precise diagnostics**: Know exactly which lesson caused confusion
+- **Targeted code review**: "Review Blueprint Lesson 4: Off-by-one concept"
+- **Progress visualization**: See the blueprint being drawn, tool being built
+- **Cross-language awareness**: Mastery phase shows same tool in JS, Python, Go
+
+---
+
+## Tool Metaphor Library
+
+Each coding tool maps to a **unique physical tool metaphor** that reflects its nature and progression:
+
+### 🪨 Stone Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Variables** | 📦 Container | Wooden box → Labeled jar → Smart storage bin |
+| **Operators** | 📏 Measuring | Hand span → Ruler → Laser measure |
+| **Output** | 📢 Communication | Chalk marks → Whiteboard → Digital display |
+| **Input** | 👂 Receiver | Ear trumpet → Telephone → Voice assistant |
+
+### 🪵 Wood Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Conditionals** | 🚪 Gate/Switch | Simple gate → Locked door → Smart lock |
+| **For Loop** | 🔄 Counting Wheel | Tally stick → Abacus → Mechanical counter |
+| **While Loop** | ⚙️ Mill/Crank | Hand crank → Water wheel → Electric motor |
+
+### 🔩 Bronze Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Arrays** | 🗄️ Tool Rack | Simple hook → Pegboard → Automated carousel |
+| **Objects** | 📋 Blueprint Case | Sketch folder → Drawing cabinet → CAD system |
+| **Strings** | 🧵 Rope/Cord | Twine → Braided rope → Steel cable |
+
+### ⚙️ Iron Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Functions** | 🛠️ Workbench | Simple table → Full bench → Modular station |
+| **Scope** | 🏠 Workshop | Open shed → Divided rooms → Sealed chambers |
+| **Error Handling** | 🛡️ Safety Gear | Gloves → Goggles → Full safety system |
+
+### 🔧 Steel Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Map** | 🏭 Assembly Line | Hand assembly → Conveyor → Robotic arm |
+| **Filter** | 🔍 Sieve | Cloth strainer → Wire mesh → Precision filter |
+| **Reduce** | 🔥 Forge | Campfire → Furnace → Industrial smelter |
+
+### ⚡ Power Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Async/Await** | ⚡ Power Grid | Candle → Gas lamp → Electric grid |
+| **Recursion** | 🪆 Nesting Dolls | Simple nesting → Fractal → Self-replicating |
+| **Generators** | 💧 Pipeline | Bucket brigade → Plumbing → Flow system |
+
+### 🎯 Precision Tier Tools
+
+| Coding Tool | Metaphor | Progression |
+|-------------|----------|-------------|
+| **Algorithms** | 🎯 Precision Instrument | Compass → Theodolite → GPS |
+| **Optimization** | ⚖️ Balance/Scale | Simple balance → Triple beam → Digital precision |
+| **Data Structures** | 🏗️ Architecture | Log cabin → Frame house → Skyscraper |
+
+---
+
+## Example: For Loop Full Lesson Map
+
+```
+FOR LOOP 🔄 (Wood Tier - Counting Wheel Metaphor)
+═══════════════════════════════════════════════════════════════
+
+📐 BLUEPRINT PHASE: "Drawing the Counting Wheel Design"
+────────────────────────────────────────────────────────────────
+B1. Why Repetition? ──────────────────── [draws axle]
+    └─ Real-world: Stamps, assembly lines, counting inventory
+    
+B2. The Counting Pattern ─────────────── [draws first spoke]
+    └─ Start somewhere, stop somewhere, step each time
+    
+B3. Loop Anatomy ─────────────────────── [draws wheel rim]
+    └─ Initialization, condition, increment - the three parts
+    
+B4. Boundary Thinking ────────────────── [draws tick marks]
+    └─ Off-by-one: fencepost problem, < vs <=
+    
+B5. Loop vs Alternatives ─────────────── [draws gear teeth]
+    └─ When FOR, when WHILE, when MAP
+
+🔨 CRAFTING PHASE: "Building Your Counting Wheel"
+────────────────────────────────────────────────────────────────
+C1. First Rotation ───────────────────── [cut the axle]
+    └─ for (let i = 0; i < 5; i++) { console.log(i); }
+    
+C2. Counting Up ──────────────────────── [shape the hub]
+    └─ Exercises: count 1-10, 1-100, custom ranges
+    
+C3. Counting Down ────────────────────── [add reverse gear]
+    └─ for (let i = 10; i > 0; i--) - countdowns, reverse iteration
+    
+C4. Custom Steps ─────────────────────── [adjust spoke spacing]
+    └─ i += 2, i += 10 - skip counting, multiples
+    
+C5. Array Iteration ──────────────────── [attach to data belt]
+    └─ for (let i = 0; i < arr.length; i++)
+    
+C6. Nested Loops ─────────────────────── [build gear train]
+    └─ Loop within loop - grids, matrices, combinations
+    
+C7. Breaking Out ─────────────────────── [install brake]
+    └─ break, continue - early exit, skip iterations
+
+🔩 MASTERY PHASE: "Hardening the Tool"
+────────────────────────────────────────────────────────────────
+M1. Industry Patterns ────────────────── [🔨 nail 1]
+    └─ Accumulator, search, transform patterns
+    
+M2. For vs ForEach vs Map ────────────── [🔨 nail 2]
+    └─ When to use which, performance implications
+    
+M3. Cross-Language Syntax ────────────── [🔨 nail 3]
+    └─ JS:     for (let i = 0; i < n; i++)
+    └─ Python: for i in range(n)
+    └─ Go:     for i := 0; i < n; i++
+    └─ Rust:   for i in 0..n
+    
+M4. Common Gotchas ───────────────────── [🔨 nail 4]
+    └─ Mutation during iteration, closure traps, infinite loops
+    
+M5. Performance & When to Avoid ──────── [🔨 nail 5]
+    └─ Big O basics, when declarative is better
+
+✨ TOOL MASTERED: Counting Wheel Complete
+```
+
+---
+
+## Documentation & Citations
+
+### Citation Policy
+
+**Every language syntax example MUST include a citation to official documentation.**
+
+This ensures:
+- Accuracy of syntax examples
+- Users can deep-dive into official sources
+- We maintain credibility and trust
+- Easy verification and updates
+
+### Official Documentation Sources
+
+| Language | Primary Source | URL Pattern |
+|----------|---------------|-------------|
+| **JavaScript** | MDN Web Docs | `https://developer.mozilla.org/en-US/docs/Web/JavaScript/...` |
+| **Python** | Python Official Docs | `https://docs.python.org/3/...` |
+| **Go** | Go Tour / Go Docs | `https://go.dev/tour/...` or `https://go.dev/doc/...` |
+| **TypeScript** | TypeScript Handbook | `https://www.typescriptlang.org/docs/...` |
+| **Rust** | The Rust Book | `https://doc.rust-lang.org/book/...` |
+
+### Citation Format in Lessons
+
+```markdown
+## Cross-Language Syntax
+
+### JavaScript
+\`\`\`javascript
+for (let i = 0; i < n; i++) {
+    // body
+}
+\`\`\`
+📖 [MDN: for statement](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for)
+
+### Python
+\`\`\`python
+for i in range(n):
+    # body
+\`\`\`
+📖 [Python Docs: for Statements](https://docs.python.org/3/tutorial/controlflow.html#for-statements)
+
+### Go
+\`\`\`go
+for i := 0; i < n; i++ {
+    // body
+}
+\`\`\`
+📖 [A Tour of Go: For](https://go.dev/tour/flowcontrol/1)
+```
+
+### Database Schema for Citations
+
+```sql
+language_docs (
+    language_id   -- 'javascript', 'python', 'go'
+    tool_id       -- 'for-loop', 'variables', etc.
+    doc_url       -- Full URL to official docs
+    doc_title     -- Page title for display
+    doc_source    -- 'MDN', 'Python Docs', 'Go Docs'
+    official_syntax -- Canonical syntax from docs
+)
+```
+
+### Updating Documentation
+
+When language versions change:
+1. Verify existing doc_urls still work
+2. Update official_syntax if changed
+3. Add notes about version differences
+4. Run automated link checker
 
 ---
 

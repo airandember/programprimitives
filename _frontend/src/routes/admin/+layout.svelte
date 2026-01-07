@@ -4,12 +4,13 @@
 	import { isAdmin } from '$lib/stores/admin';
 	import { 
 		LayoutDashboard, BookOpen, Code2, Users, FileText, 
-		Settings, ChevronLeft, Shield, History
+		Settings, ChevronLeft, Shield, History, GraduationCap
 	} from 'lucide-svelte';
 
 	const navItems = [
 		{ href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/admin/primitives', label: 'Primitives', icon: BookOpen },
+		{ href: '/admin/lessons', label: 'Lessons', icon: GraduationCap },
 		{ href: '/admin/exercises', label: 'Exercises', icon: Code2 },
 		{ href: '/admin/users', label: 'Users', icon: Users },
 		{ href: '/admin/audit-log', label: 'Audit Log', icon: History },

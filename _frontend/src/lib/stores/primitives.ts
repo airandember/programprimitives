@@ -1,9 +1,10 @@
 // ============================================
-// Primitives Store - Re-exports from primitives braid
+// Tools (Primitives) Store - Re-exports from primitives braid
+// The Craftsman's Journey
 // ============================================
 // 
 // Components should import from here:
-//   import { primitives, getPrimitive } from '$lib/stores/primitives';
+//   import { primitives, getPrimitive, primitivesByTier } from '$lib/stores/primitives';
 //
 
 export {
@@ -13,8 +14,11 @@ export {
 	selectedLanguage,
 	searchQuery,
 	selectedCategory,
+	selectedTier,
 	filteredPrimitives,
 	primitivesByCategory,
+	primitivesByTier,
+	tiersWithCounts,
 	freePrimitives,
 	premiumPrimitives,
 	categoriesWithCounts,
@@ -25,6 +29,8 @@ export {
 	setLanguage,
 	setSearchQuery,
 	setCategory,
+	setTier,
 	clearFilters,
 	CATEGORIES,
+	TOOL_TIERS,
 } from '@braids/primitives/frontend/stores/primitives';

@@ -1,11 +1,39 @@
 // ============================================
-// Primitive Types
+// Primitive Types (Tools)
 // ============================================
 
 import type { Language } from './user';
 
 /**
- * Primitive category
+ * Tool Tier - The Craftsman's Journey
+ * Tools are organized by conceptual complexity and dependency depth
+ */
+export type ToolTier = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export type ToolTierName = 
+	| 'blueprints' // 0: Mental models, patterns, principles (the WHY)
+	| 'stone'      // 1: Raw fundamentals
+	| 'wood'       // 2: Structured basics  
+	| 'bronze'     // 3: Data organization
+	| 'iron'       // 4: Abstractions
+	| 'steel'      // 5: Higher-order patterns
+	| 'power'      // 6: Advanced concepts
+	| 'precision'; // 7: Mastery-level
+
+/**
+ * Tool refinement stage (per-user progress on a tool)
+ */
+export type RefinementStage = 
+	| 'unstarted'  // Haven't begun
+	| 'stone'      // Basic understanding
+	| 'wood'       // Comfortable with syntax
+	| 'bronze'     // Can apply independently
+	| 'iron'       // Solid proficiency
+	| 'steel'      // Advanced patterns
+	| 'mastered';  // Complete mastery
+
+/**
+ * Primitive category (legacy - used for grouping within tiers)
  */
 export type PrimitiveCategory = 
 	| 'fundamentals'
@@ -27,13 +55,17 @@ export type PrimitiveSubcategory =
 	| 'concurrency';
 
 /**
- * Core primitive entity
+ * Core primitive entity (Tool)
  */
 export interface Primitive {
 	id: string;                          // URL-safe slug: 'for-loop'
 	name: string;                        // Display name: 'For Loop'
 	category: PrimitiveCategory;
 	subcategory?: PrimitiveSubcategory;
+	
+	// Tool Tier (Craftsman's Journey)
+	tier: ToolTier;                      // 1-7 tier number
+	tierName: ToolTierName;              // 'stone', 'wood', etc.
 	
 	// Content
 	description: string;                 // Brief description
@@ -42,21 +74,21 @@ export interface Primitive {
 	pitfalls: string[];                 // Don'ts
 	
 	// Metadata
-	difficulty: 1 | 2 | 3 | 4 | 5;
+	difficulty: 1 | 2 | 3 | 4 | 5;       // Legacy difficulty (derived from tier)
 	icon: string;                        // Emoji or icon ID
 	prerequisites: string[];             // Primitive IDs
 	related: string[];                   // Related primitive IDs
 	
 	// Access
 	isPremium: boolean;
-	isPublished: boolean;
+	isPublished?: boolean;
 	
 	// Ordering
-	categoryOrder: number;
+	categoryOrder?: number;
 	
 	// Timestamps
-	createdAt: string;
-	updatedAt: string;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 /**

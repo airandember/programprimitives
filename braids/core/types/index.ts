@@ -11,4 +11,5 @@ export * from './gamification';
 export * from './subscription';
 export * from './api';
 export * from './free-zone';
+export * from './lesson';
 
