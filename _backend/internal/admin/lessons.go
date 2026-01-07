@@ -29,6 +29,7 @@ type Lesson struct {
 	VisualElements   string  `json:"visualElements,omitempty"`
 	EstimatedMinutes int     `json:"estimatedMinutes"`
 	DifficultyMod    float64 `json:"difficultyModifier"`
+	XpReward         int     `json:"xpReward"`
 	IsPremium        bool    `json:"isPremium"`
 	IsPublished      bool    `json:"isPublished"`
 	LastEditedBy     string  `json:"lastEditedBy,omitempty"`
@@ -51,6 +52,7 @@ type LessonInput struct {
 	VisualElements   string  `json:"visualElements"`
 	EstimatedMinutes int     `json:"estimatedMinutes"`
 	DifficultyMod    float64 `json:"difficultyModifier"`
+	XpReward         int     `json:"xpReward"`
 	IsPremium        bool    `json:"isPremium"`
 	IsPublished      bool    `json:"isPublished"`
 }
@@ -99,6 +101,7 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 		       COALESCE(visual_elements, ''),
 		       estimated_minutes, 
 		       COALESCE(difficulty_modifier, 0),
+		       COALESCE(xp_reward, 25),
 		       is_premium, is_published,
 		       COALESCE(last_edited_by, ''),
 		       COALESCE(last_edited_at, ''),
@@ -134,7 +137,7 @@ func (h *Handler) HandleListLessons(w http.ResponseWriter, r *http.Request) {
 			&l.ID, &l.ToolID, &l.Slug, &l.Title, &l.Description, &l.Phase,
 			&l.PhaseOrder, &l.SequenceOrder, &l.MetaphorProgress,
 			&l.ContentMarkdown, &l.VisualElements, &l.EstimatedMinutes,
-			&l.DifficultyMod, &l.IsPremium, &l.IsPublished,
+			&l.DifficultyMod, &l.XpReward, &l.IsPremium, &l.IsPublished,
 			&l.LastEditedBy, &l.LastEditedAt, &l.Version,
 			&l.CreatedAt, &l.UpdatedAt,
 		)
@@ -167,6 +170,7 @@ func (h *Handler) HandleGetLesson(w http.ResponseWriter, r *http.Request) {
 		       COALESCE(visual_elements, ''),
 		       estimated_minutes, 
 		       COALESCE(difficulty_modifier, 0),
+		       COALESCE(xp_reward, 25),
 		       is_premium, is_published,
 		       COALESCE(last_edited_by, ''),
 		       COALESCE(last_edited_at, ''),
@@ -178,7 +182,7 @@ func (h *Handler) HandleGetLesson(w http.ResponseWriter, r *http.Request) {
 		&l.ID, &l.ToolID, &l.Slug, &l.Title, &l.Description, &l.Phase,
 		&l.PhaseOrder, &l.SequenceOrder, &l.MetaphorProgress,
 		&l.ContentMarkdown, &l.VisualElements, &l.EstimatedMinutes,
-		&l.DifficultyMod, &l.IsPremium, &l.IsPublished,
+		&l.DifficultyMod, &l.XpReward, &l.IsPremium, &l.IsPublished,
 		&l.LastEditedBy, &l.LastEditedAt, &l.Version,
 		&l.CreatedAt, &l.UpdatedAt,
 	)
@@ -228,18 +232,24 @@ func (h *Handler) HandleCreateLesson(w http.ResponseWriter, r *http.Request) {
 	id := strings.ToLower(input.ToolID + "-" + input.Slug)
 	now := time.Now().UTC().Format(time.RFC3339)
 
+	// Default XP reward to 25 if not set
+	xpReward := input.XpReward
+	if xpReward == 0 {
+		xpReward = 25
+	}
+
 	_, err := h.db.Exec(`
 		INSERT INTO lessons (
 			id, tool_id, slug, title, description, phase, phase_order,
 			sequence_order, metaphor_progress, content_markdown, visual_elements,
-			estimated_minutes, difficulty_modifier, is_premium, is_published,
+			estimated_minutes, difficulty_modifier, xp_reward, is_premium, is_published,
 			last_edited_by, last_edited_at, version, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
 	`,
 		id, input.ToolID, input.Slug, input.Title, input.Description,
 		input.Phase, input.PhaseOrder, input.SequenceOrder, input.MetaphorProgress,
 		input.ContentMarkdown, input.VisualElements, input.EstimatedMinutes,
-		input.DifficultyMod, input.IsPremium, input.IsPublished,
+		input.DifficultyMod, xpReward, input.IsPremium, input.IsPublished,
 		adminID, now, now, now,
 	)
 
@@ -292,19 +302,25 @@ func (h *Handler) HandleUpdateLesson(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	newVersion := currentVersion + 1
 
+	// Default XP reward to 25 if not set
+	xpReward := input.XpReward
+	if xpReward == 0 {
+		xpReward = 25
+	}
+
 	_, err = h.db.Exec(`
 		UPDATE lessons SET
 			title = ?, description = ?, phase = ?, phase_order = ?,
 			sequence_order = ?, metaphor_progress = ?, content_markdown = ?,
 			visual_elements = ?, estimated_minutes = ?, difficulty_modifier = ?,
-			is_premium = ?, is_published = ?, last_edited_by = ?,
+			xp_reward = ?, is_premium = ?, is_published = ?, last_edited_by = ?,
 			last_edited_at = ?, version = ?, updated_at = ?
 		WHERE id = ?
 	`,
 		input.Title, input.Description, input.Phase, input.PhaseOrder,
 		input.SequenceOrder, input.MetaphorProgress, input.ContentMarkdown,
 		input.VisualElements, input.EstimatedMinutes, input.DifficultyMod,
-		input.IsPremium, input.IsPublished, adminID, now, newVersion, now, id,
+		xpReward, input.IsPremium, input.IsPublished, adminID, now, newVersion, now, id,
 	)
 
 	if err != nil {

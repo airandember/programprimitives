@@ -36,6 +36,7 @@ export interface Lesson {
 	contentMarkdown?: string;        // Full lesson content
 	estimatedMinutes: number;        // Time estimate
 	difficultyModifier: number;      // Added to tool base difficulty
+	xpReward: number;                // XP awarded on completion (default: 25)
 	
 	// Access
 	isPremium: boolean;
