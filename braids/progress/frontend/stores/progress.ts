@@ -172,7 +172,10 @@ async function fetchProgress(): Promise<Partial<UserProgress>> {
 			if (response.status === 401) return {}; // Not logged in
 			throw new Error('Failed to fetch progress');
 		}
-		return await response.json();
+		const json = await response.json();
+		// API returns { success: true, data: {...} } - extract data
+		const data = json && typeof json === 'object' && 'data' in json ? json.data : json;
+		return data || {};
 	} catch (e) {
 		console.error('Failed to fetch progress:', e);
 		return {};
@@ -188,9 +191,15 @@ async function fetchMastery(): Promise<PrimitiveMastery[]> {
 			if (response.status === 401) return [];
 			throw new Error('Failed to fetch mastery');
 		}
-		const data = await response.json();
+		const json = await response.json();
+		// API returns { success: true, data: [...] } - extract data
+		const data = json && typeof json === 'object' && 'data' in json ? json.data : json;
+		// Ensure data is an array before mapping
+		if (!Array.isArray(data)) {
+			return [];
+		}
 		// Map API response to our interface
-		return (data || []).map((m: any) => ({
+		return data.map((m: any) => ({
 			primitiveId: m.primitiveId,
 			language: m.language || 'javascript',
 			level: m.level || 0,

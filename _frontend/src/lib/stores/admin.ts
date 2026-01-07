@@ -76,7 +76,7 @@ function createAdminStore() {
 			update(s => ({ ...s, loading: true }));
 			try {
 				const primitives = await adminApi.listPrimitives();
-				update(s => ({ ...s, primitives: primitives || [], loading: false }));
+				update(s => ({ ...s, primitives: Array.isArray(primitives) ? primitives : [], loading: false }));
 			} catch (e: any) {
 				update(s => ({ ...s, primitives: [], error: e.message, loading: false }));
 			}
@@ -103,7 +103,7 @@ function createAdminStore() {
 			update(s => ({ ...s, loading: true }));
 			try {
 				const exercises = await adminApi.listExercises(primitiveId);
-				update(s => ({ ...s, exercises: exercises || [], loading: false }));
+				update(s => ({ ...s, exercises: Array.isArray(exercises) ? exercises : [], loading: false }));
 			} catch (e: any) {
 				update(s => ({ ...s, exercises: [], error: e.message, loading: false }));
 			}
@@ -130,7 +130,7 @@ function createAdminStore() {
 			update(s => ({ ...s, loading: true }));
 			try {
 				const users = await adminApi.listUsers();
-				update(s => ({ ...s, users: users || [], loading: false }));
+				update(s => ({ ...s, users: Array.isArray(users) ? users : [], loading: false }));
 			} catch (e: any) {
 				update(s => ({ ...s, users: [], error: e.message, loading: false }));
 			}
@@ -145,7 +145,7 @@ function createAdminStore() {
 			update(s => ({ ...s, loading: true }));
 			try {
 				const auditLog = await adminApi.getAuditLog();
-				update(s => ({ ...s, auditLog: auditLog || [], loading: false }));
+				update(s => ({ ...s, auditLog: Array.isArray(auditLog) ? auditLog : [], loading: false }));
 			} catch (e: any) {
 				update(s => ({ ...s, auditLog: [], error: e.message, loading: false }));
 			}

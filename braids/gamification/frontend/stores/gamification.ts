@@ -332,7 +332,10 @@ async function fetchAchievements(): Promise<any[]> {
 		if (!response.ok) {
 			return [];
 		}
-		return await response.json();
+		const json = await response.json();
+		// API returns { success: true, data: [...] } - extract data
+		const data = json && typeof json === 'object' && 'data' in json ? json.data : json;
+		return Array.isArray(data) ? data : [];
 	} catch (e) {
 		console.error('Failed to fetch achievements:', e);
 		return [];
