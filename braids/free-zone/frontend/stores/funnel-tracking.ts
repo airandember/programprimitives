@@ -24,14 +24,24 @@ export type FunnelName =
 	| 'exit_intent';         // Exit intent popup
 
 export type TouchPoint =
-	// Try flow
+	// Try flow - lessons
 	| 'try_page_view'
+	| 'try_lesson_view'
+	| 'try_lesson_complete_1'
+	| 'try_lesson_complete_2'
+	| 'try_lesson_complete_3'
+	// Try flow - exercises
+	| 'try_exercise_view'
 	| 'try_exercise_start'
 	| 'try_exercise_complete_1'
 	| 'try_exercise_complete_2'
 	| 'try_exercise_complete_3'
 	| 'try_limit_modal'
 	| 'try_signup_cta'
+	| 'try_complete_signup_cta'
+	| 'try_page_signup_cta'
+	| 'try_return_modal'
+	| 'try_all_complete_signup'
 	// Lesson flow
 	| 'lesson_locked_view'
 	| 'lesson_signup_modal'
