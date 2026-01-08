@@ -396,15 +396,24 @@ const defaultState: FreeZoneState = {
 // ============================================
 
 function loadState(): FreeZoneState {
-	if (!browser) return defaultState;
+	if (!browser) return { ...defaultState };
 	
 	try {
 		const stored = localStorage.getItem(FREE_ZONE_CONFIG.storageKey);
 		if (stored) {
-			const parsed = JSON.parse(stored) as FreeZoneState;
-			// Update last visit
-			parsed.lastVisit = new Date().toISOString();
-			return parsed;
+			const parsed = JSON.parse(stored);
+			// Merge with defaults to ensure all fields exist (handles schema migrations)
+			const merged: FreeZoneState = {
+				...defaultState,
+				...parsed,
+				// Ensure arrays exist (in case of old localStorage data)
+				lessonsCompleted: parsed.lessonsCompleted || [],
+				lessonsStarted: parsed.lessonsStarted || [],
+				exercisesCompleted: parsed.exercisesCompleted || [],
+				exercisesStarted: parsed.exercisesStarted || [],
+				lastVisit: new Date().toISOString(),
+			};
+			return merged;
 		}
 	} catch (e) {
 		console.error('Failed to load free zone state:', e);
@@ -554,38 +563,38 @@ export const freeZone = createFreeZoneStore();
 
 /** Number of lessons completed */
 export const completedLessonsCount = derived(freeZone, $state => 
-	$state.lessonsCompleted.length
+	($state.lessonsCompleted || []).length
 );
 
 /** Number of exercises completed */
 export const completedExercisesCount = derived(freeZone, $state => 
-	$state.exercisesCompleted.length
+	($state.exercisesCompleted || []).length
 );
 
 /** Total items completed (lessons + exercises) */
 export const totalCompletedCount = derived(freeZone, $state => 
-	$state.lessonsCompleted.length + $state.exercisesCompleted.length
+	($state.lessonsCompleted || []).length + ($state.exercisesCompleted || []).length
 );
 
 /** Number of lessons remaining */
 export const remainingLessons = derived(freeZone, $state => 
-	Math.max(0, FREE_ZONE_CONFIG.maxFreeLessons - $state.lessonsCompleted.length)
+	Math.max(0, FREE_ZONE_CONFIG.maxFreeLessons - ($state.lessonsCompleted || []).length)
 );
 
 /** Number of exercises remaining */
 export const remainingExercises = derived(freeZone, $state => 
-	Math.max(0, FREE_ZONE_CONFIG.maxFreeExercises - $state.exercisesCompleted.length)
+	Math.max(0, FREE_ZONE_CONFIG.maxFreeExercises - ($state.exercisesCompleted || []).length)
 );
 
 /** Has completed all free content? */
 export const hasCompletedAllFree = derived(freeZone, $state => 
-	$state.lessonsCompleted.length >= FREE_ZONE_CONFIG.maxFreeLessons &&
-	$state.exercisesCompleted.length >= FREE_ZONE_CONFIG.maxFreeExercises
+	($state.lessonsCompleted || []).length >= FREE_ZONE_CONFIG.maxFreeLessons &&
+	($state.exercisesCompleted || []).length >= FREE_ZONE_CONFIG.maxFreeExercises
 );
 
 /** Should show signup prompt? */
 export const shouldShowSignupPrompt = derived(freeZone, $state => {
-	const totalCompleted = $state.lessonsCompleted.length + $state.exercisesCompleted.length;
+	const totalCompleted = ($state.lessonsCompleted || []).length + ($state.exercisesCompleted || []).length;
 	// Show after completing showSignupAfter items
 	if (totalCompleted >= FREE_ZONE_CONFIG.showSignupAfter) {
 		// But not if they just dismissed it recently (within 5 min)
