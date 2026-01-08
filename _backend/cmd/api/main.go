@@ -137,10 +137,12 @@ func (app *App) registerAPIRoutes(mux *http.ServeMux) {
 
 	// Funnel analytics routes (public - tracks anonymous users too)
 	mux.HandleFunc("POST /api/funnel/track", app.handleTrackFunnelEvent)
-	mux.HandleFunc("GET /api/admin/funnel/stats", adminMw.RequireAdmin(app.handleGetFunnelStats))
 
 	// Admin routes (protected by admin middleware)
 	adminMw := app.adminHandler.GetMiddleware()
+	
+	// Admin funnel analytics
+	mux.HandleFunc("GET /api/admin/funnel/stats", adminMw.RequireAdmin(app.handleGetFunnelStats))
 	
 	// Admin dashboard
 	mux.HandleFunc("GET /api/admin/stats", adminMw.RequireAdmin(app.adminHandler.HandleDashboardStats))
