@@ -4,7 +4,7 @@
 	import { isAdmin } from '$lib/stores/admin';
 	import { 
 		LayoutDashboard, BookOpen, Code2, Users, FileText, 
-		Settings, ChevronLeft, Shield, History, GraduationCap
+		Settings, ChevronLeft, Shield, History, GraduationCap, BarChart3
 	} from 'lucide-svelte';
 
 	const navItems = [
@@ -13,6 +13,7 @@
 		{ href: '/admin/lessons', label: 'Lessons', icon: GraduationCap },
 		{ href: '/admin/exercises', label: 'Exercises', icon: Code2 },
 		{ href: '/admin/users', label: 'Users', icon: Users },
+		{ href: '/admin/analytics', label: 'Funnel Analytics', icon: BarChart3 },
 		{ href: '/admin/audit-log', label: 'Audit Log', icon: History },
 	];
 

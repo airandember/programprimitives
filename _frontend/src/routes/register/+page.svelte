@@ -1,8 +1,25 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { isAuthenticated } from '$lib/stores/auth';
 	import { RegisterForm } from '$lib/components/auth';
+	import { funnelTracking, trackConversion } from '@braids/free-zone/frontend/stores/funnel-tracking';
+	
+	// Track where user came from
+	let referrer = '';
+	
+	onMount(() => {
+		referrer = document.referrer || '';
+		
+		// Track signup page view
+		funnelTracking.track({
+			eventType: 'view',
+			funnelName: 'try_signup',
+			touchpoint: 'signup_start',
+			metadata: { referrer },
+		});
+	});
 	
 	// Redirect if already logged in
 	$: if ($isAuthenticated) {
@@ -11,6 +28,9 @@
 	}
 	
 	function handleSuccess() {
+		// Track successful signup conversion
+		trackConversion('signup');
+		
 		const redirect = $page.url.searchParams.get('redirect') || '/dashboard';
 		goto(redirect);
 	}

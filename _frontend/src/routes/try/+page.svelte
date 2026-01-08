@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Play, Clock, Star, Lock, ChevronRight, Sparkles, Check, Zap, Trophy, Flame } from 'lucide-svelte';
 	import { 
 		freeZone, 
@@ -7,8 +8,28 @@
 		FREE_EXERCISES,
 		FREE_ZONE_CONFIG,
 	} from '@braids/free-zone/frontend/stores/free-zone';
+	import { funnelTracking } from '@braids/free-zone/frontend/stores/funnel-tracking';
 	import { getExercise } from '$lib/stores/exercises';
 	import { getPrimitive } from '$lib/stores/primitives';
+	import { UpgradePrompt } from '$lib/components/upgrade';
+
+	let showUpgradeModal = false;
+
+	onMount(() => {
+		// Track try page view
+		funnelTracking.track({
+			eventType: 'view',
+			funnelName: 'try_signup',
+			touchpoint: 'try_page_view',
+		});
+		
+		// If user has reached limit, show upgrade after short delay
+		if ($hasReachedLimit) {
+			setTimeout(() => {
+				showUpgradeModal = true;
+			}, 1500);
+		}
+	});
 
 	// Get free exercises with details
 	$: freeExercises = FREE_EXERCISES.map(id => {
@@ -167,14 +188,51 @@
 				earn achievements, and learn in any programming language.
 			</p>
 			<div class="flex items-center justify-center gap-4">
-				<a href="/register" class="btn btn-primary text-lg px-8">
+				<a 
+					href="/register" 
+					class="btn btn-primary text-lg px-8"
+					on:click={() => {
+						funnelTracking.track({
+							eventType: 'click',
+							funnelName: 'try_signup',
+							touchpoint: 'try_page_signup_cta',
+						});
+					}}
+				>
 					Create Free Account
 				</a>
-				<a href="/login" class="btn btn-ghost">
+				<a 
+					href="/login" 
+					class="btn btn-ghost"
+					on:click={() => {
+						funnelTracking.track({
+							eventType: 'click',
+							funnelName: 'try_signup',
+							touchpoint: 'try_page_login_cta',
+						});
+					}}
+				>
 					Log In
 				</a>
 			</div>
 		</div>
 	</div>
+
+	<!-- Upgrade Modal for returning users who hit limit -->
+	<UpgradePrompt 
+		variant="modal"
+		bind:show={showUpgradeModal}
+		funnelName="limit_reached"
+		touchpoint="try_page_limit_return"
+		title="Welcome Back! 👋"
+		subtitle="You've already completed all free exercises. Ready to continue your learning journey?"
+		ctaText="Get Full Access"
+		features={[
+			"Unlimited exercises",
+			"All programming languages",
+			"Progress tracking",
+			"Achievements & XP"
+		]}
+	/>
 </div>
 
