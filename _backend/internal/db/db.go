@@ -101,11 +101,16 @@ func RunMigrations(db *sql.DB, migrationsDir string) error {
 
 		// Split by semicolons and execute each statement
 		statements := strings.Split(string(content), ";")
+		executedCount := 0
 		for i, stmt := range statements {
-			stmt = strings.TrimSpace(stmt)
-			if stmt == "" || strings.HasPrefix(stmt, "--") {
+			// Strip leading comment lines and whitespace
+			stmt = stripSQLComments(stmt)
+			if stmt == "" {
 				continue
 			}
+			
+			log.Printf("   📝 Executing statement %d: %s...", i+1, truncate(stmt, 60))
+			
 			if _, err := tx.Exec(stmt); err != nil {
 				// Handle idempotent errors gracefully (duplicate columns, etc.)
 				errStr := err.Error()
@@ -116,8 +121,14 @@ func RunMigrations(db *sql.DB, migrationsDir string) error {
 					continue
 				}
 				tx.Rollback()
-				return fmt.Errorf("failed to execute migration %s (statement %d): %w\nStatement: %s", filename, i+1, err, stmt[:min(100, len(stmt))])
+				return fmt.Errorf("failed to execute migration %s (statement %d): %w\nStatement: %s", filename, i+1, err, truncate(stmt, 100))
 			}
+			executedCount++
+		}
+		
+		if executedCount == 0 {
+			tx.Rollback()
+			return fmt.Errorf("migration %s has no executable statements", filename)
 		}
 
 		// Record migration
@@ -143,3 +154,40 @@ func min(a, b int) int {
 	return b
 }
 
+// stripSQLComments removes leading SQL comment lines from a statement
+// This fixes the bug where statements starting with -- comments were skipped entirely
+func stripSQLComments(stmt string) string {
+	lines := strings.Split(stmt, "\n")
+	result := []string{}
+	
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		// Skip empty lines and full comment lines at the start
+		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
+			// Only skip if we haven't found any SQL yet
+			if len(result) == 0 {
+				continue
+			}
+		}
+		result = append(result, line)
+	}
+	
+	return strings.TrimSpace(strings.Join(result, "\n"))
+}
+
+// truncate shortens a string for logging
+func truncate(s string, maxLen int) string {
+	// Replace newlines with spaces for cleaner logging
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\t", " ")
+	// Collapse multiple spaces
+	for strings.Contains(s, "  ") {
+		s = strings.ReplaceAll(s, "  ", " ")
+	}
+	s = strings.TrimSpace(s)
+	
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
+}
