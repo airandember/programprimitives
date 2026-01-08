@@ -4,7 +4,7 @@
 	import { X, Sparkles, Zap, Crown, Lock, ArrowRight, Check } from 'lucide-svelte';
 	import { fade, scale, fly } from 'svelte/transition';
 	import { funnelTracking, type FunnelName, type TouchPoint } from '@braids/free-zone/frontend/stores/funnel-tracking';
-	import { auth } from '$lib/stores/auth-store';
+	import { isAuthenticated } from '$lib/stores/auth-store';
 
 	// Props
 	export let variant: 'modal' | 'banner' | 'inline' | 'card' | 'floating' = 'modal';
@@ -36,7 +36,7 @@
 	let hasTrackedView = false;
 
 	// Check if user is logged in
-	$: isLoggedIn = $auth?.isAuthenticated;
+	$: isLoggedIn = $isAuthenticated;
 	$: displayCta = isLoggedIn ? 'Upgrade to Premium' : ctaText;
 	$: displayLink = isLoggedIn ? '/pricing' : ctaLink;
 
