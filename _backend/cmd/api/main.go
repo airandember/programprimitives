@@ -4,9 +4,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -132,6 +134,10 @@ func (app *App) registerAPIRoutes(mux *http.ServeMux) {
 	// Gamification routes
 	mux.HandleFunc("GET /api/achievements", app.handleListAchievements)
 	mux.HandleFunc("GET /api/leaderboard/{period}", app.handleLeaderboard)
+
+	// Funnel analytics routes (public - tracks anonymous users too)
+	mux.HandleFunc("POST /api/funnel/track", app.handleTrackFunnelEvent)
+	mux.HandleFunc("GET /api/admin/funnel/stats", adminMw.RequireAdmin(app.handleGetFunnelStats))
 
 	// Admin routes (protected by admin middleware)
 	adminMw := app.adminHandler.GetMiddleware()
@@ -777,6 +783,205 @@ func (app *App) handleCompleteLesson(w http.ResponseWriter, r *http.Request) {
 		"lessonId":  lessonID,
 		"xpAwarded": xpReward,
 	})
+}
+
+// ============================================
+// Funnel Analytics Handlers
+// ============================================
+
+// FunnelEventInput represents an incoming tracking event
+type FunnelEventInput struct {
+	SessionID   string                 `json:"sessionId"`
+	EventType   string                 `json:"eventType"`
+	FunnelName  string                 `json:"funnelName"`
+	Touchpoint  string                 `json:"touchpoint"`
+	SourcePage  string                 `json:"sourcePage"`
+	ExerciseID  string                 `json:"exerciseId"`
+	LessonID    string                 `json:"lessonId"`
+	PrimitiveID string                 `json:"primitiveId"`
+	DeviceType  string                 `json:"deviceType"`
+	Browser     string                 `json:"browser"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Timestamp   string                 `json:"timestamp"`
+}
+
+func (app *App) handleTrackFunnelEvent(w http.ResponseWriter, r *http.Request) {
+	var input FunnelEventInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		response.BadRequest(w, "Invalid JSON")
+		return
+	}
+
+	// Validate required fields
+	if input.SessionID == "" || input.FunnelName == "" || input.Touchpoint == "" {
+		response.BadRequest(w, "sessionId, funnelName, and touchpoint are required")
+		return
+	}
+
+	// Get user ID if logged in
+	var userID *string
+	if user := app.authHandler.GetUserFromSession(r); user != nil {
+		userID = &user.ID
+	}
+
+	// Generate event ID
+	id := "fe_" + time.Now().Format("20060102150405") + "_" + input.SessionID[:8]
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	// Serialize metadata
+	metadataJSON := "{}"
+	if input.Metadata != nil {
+		if data, err := json.Marshal(input.Metadata); err == nil {
+			metadataJSON = string(data)
+		}
+	}
+
+	// Insert event
+	_, err := app.db.Exec(`
+		INSERT INTO funnel_events (
+			id, user_id, session_id, event_type, funnel_name, touchpoint,
+			source_page, exercise_id, lesson_id, primitive_id, metadata,
+			device_type, browser, created_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		id, userID, input.SessionID, input.EventType, input.FunnelName, input.Touchpoint,
+		input.SourcePage, nilIfEmpty(input.ExerciseID), nilIfEmpty(input.LessonID),
+		nilIfEmpty(input.PrimitiveID), metadataJSON, input.DeviceType, input.Browser, now,
+	)
+
+	if err != nil {
+		// Log but don't fail - analytics shouldn't break UX
+		log.Printf("Failed to track funnel event: %v", err)
+	}
+
+	// Update daily stats (async in production, sync here for simplicity)
+	app.updateFunnelDailyStats(input.FunnelName, input.Touchpoint, input.EventType, input.SessionID, userID)
+
+	response.JSON(w, http.StatusOK, map[string]bool{"tracked": true})
+}
+
+func (app *App) updateFunnelDailyStats(funnelName, touchpoint, eventType, sessionID string, userID *string) {
+	today := time.Now().UTC().Format("2006-01-02")
+	statsID := today + "_" + funnelName + "_" + touchpoint
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	// Try to update existing record, or insert new one
+	var column string
+	switch eventType {
+	case "view":
+		column = "views"
+	case "click":
+		column = "clicks"
+	case "dismiss":
+		column = "dismisses"
+	case "convert":
+		column = "conversions"
+	default:
+		return
+	}
+
+	// Upsert the daily stats
+	_, _ = app.db.Exec(`
+		INSERT INTO funnel_daily_stats (id, date, funnel_name, touchpoint, `+column+`, unique_sessions, created_at, updated_at)
+		VALUES (?, ?, ?, ?, 1, 1, ?, ?)
+		ON CONFLICT(date, funnel_name, touchpoint) DO UPDATE SET
+			`+column+` = `+column+` + 1,
+			updated_at = excluded.updated_at
+	`, statsID, today, funnelName, touchpoint, now, now)
+}
+
+func nilIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func (app *App) handleGetFunnelStats(w http.ResponseWriter, r *http.Request) {
+	// Get date range from query params
+	daysBack := 30
+	if d := r.URL.Query().Get("days"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 && parsed <= 90 {
+			daysBack = parsed
+		}
+	}
+
+	startDate := time.Now().AddDate(0, 0, -daysBack).Format("2006-01-02")
+
+	// Get daily stats
+	rows, err := app.db.Query(`
+		SELECT date, funnel_name, touchpoint, views, clicks, dismisses, conversions
+		FROM funnel_daily_stats
+		WHERE date >= ?
+		ORDER BY date DESC, funnel_name, touchpoint
+	`, startDate)
+	if err != nil {
+		response.JSON(w, http.StatusOK, map[string]interface{}{
+			"daily":   []interface{}{},
+			"summary": map[string]interface{}{},
+		})
+		return
+	}
+	defer rows.Close()
+
+	daily := []map[string]interface{}{}
+	summaryByFunnel := make(map[string]map[string]int)
+
+	for rows.Next() {
+		var date, funnelName, touchpoint string
+		var views, clicks, dismisses, conversions int
+
+		if err := rows.Scan(&date, &funnelName, &touchpoint, &views, &clicks, &dismisses, &conversions); err != nil {
+			continue
+		}
+
+		daily = append(daily, map[string]interface{}{
+			"date":        date,
+			"funnelName":  funnelName,
+			"touchpoint":  touchpoint,
+			"views":       views,
+			"clicks":      clicks,
+			"dismisses":   dismisses,
+			"conversions": conversions,
+			"clickRate":   safePercent(clicks, views),
+			"convRate":    safePercent(conversions, views),
+		})
+
+		// Aggregate by funnel
+		if _, ok := summaryByFunnel[funnelName]; !ok {
+			summaryByFunnel[funnelName] = map[string]int{"views": 0, "clicks": 0, "dismisses": 0, "conversions": 0}
+		}
+		summaryByFunnel[funnelName]["views"] += views
+		summaryByFunnel[funnelName]["clicks"] += clicks
+		summaryByFunnel[funnelName]["dismisses"] += dismisses
+		summaryByFunnel[funnelName]["conversions"] += conversions
+	}
+
+	// Build summary with rates
+	summary := make(map[string]interface{})
+	for funnel, counts := range summaryByFunnel {
+		summary[funnel] = map[string]interface{}{
+			"views":       counts["views"],
+			"clicks":      counts["clicks"],
+			"dismisses":   counts["dismisses"],
+			"conversions": counts["conversions"],
+			"clickRate":   safePercent(counts["clicks"], counts["views"]),
+			"convRate":    safePercent(counts["conversions"], counts["views"]),
+		}
+	}
+
+	response.JSON(w, http.StatusOK, map[string]interface{}{
+		"daily":   daily,
+		"summary": summary,
+		"period":  daysBack,
+	})
+}
+
+func safePercent(numerator, denominator int) float64 {
+	if denominator == 0 {
+		return 0
+	}
+	return float64(numerator) / float64(denominator) * 100
 }
 
 // ============================================

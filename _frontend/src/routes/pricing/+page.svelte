@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Check, Zap, Star, Crown, HelpCircle } from 'lucide-svelte';
 	import PricingCard from '$lib/components/subscription/PricingCard.svelte';
 	import { 
@@ -7,8 +8,27 @@
 		TIER_INFO,
 		type BillingCycle,
 	} from '$lib/stores/subscription';
+	import { funnelTracking } from '@braids/free-zone/frontend/stores/funnel-tracking';
 
 	let billingCycle: BillingCycle = 'yearly';
+
+	onMount(() => {
+		// Track pricing page view
+		funnelTracking.track({
+			eventType: 'view',
+			funnelName: 'pricing_page',
+			touchpoint: 'pricing_view',
+		});
+	});
+
+	function trackPlanClick(plan: string) {
+		funnelTracking.track({
+			eventType: 'click',
+			funnelName: 'pricing_page',
+			touchpoint: 'pricing_plan_click',
+			metadata: { plan, billingCycle },
+		});
+	}
 
 	const faqs = [
 		{

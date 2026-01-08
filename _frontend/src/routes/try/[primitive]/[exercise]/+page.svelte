@@ -43,7 +43,9 @@
 		FREE_ZONE_CONFIG,
 		FREE_EXERCISES,
 	} from '@braids/free-zone/frontend/stores/free-zone';
+	import { funnelTracking } from '@braids/free-zone/frontend/stores/funnel-tracking';
 	import SignupPrompt from '$lib/components/free-zone/SignupPrompt.svelte';
+	import { UpgradePrompt } from '$lib/components/upgrade';
 
 	$: exerciseId = $page.params.exercise;
 	$: primitiveId = $page.params.primitive;
@@ -56,16 +58,34 @@
 
 	let showSuccess = false;
 	let showSignupPrompt = false;
+	let showLimitModal = false;
 	let earnedXP = 0;
 
 	onMount(() => {
 		if (!canAccess) {
+			// Track when someone hits the limit
+			funnelTracking.track({
+				eventType: 'view',
+				funnelName: 'limit_reached',
+				touchpoint: 'try_limit_redirect',
+				exerciseId,
+				primitiveId,
+			});
 			goto('/try');
 			return;
 		}
 		
 		loadExercise(exerciseId);
 		freeZone.startExercise(exerciseId);
+		
+		// Track exercise start
+		funnelTracking.track({
+			eventType: 'view',
+			funnelName: 'try_signup',
+			touchpoint: 'try_exercise_start',
+			exerciseId,
+			primitiveId,
+		});
 	});
 
 	// Sync language with primitives store
@@ -102,11 +122,44 @@
 			earnedXP = result.xpEarned;
 			showSuccess = true;
 			
-			// Show signup prompt after completing
-			if ($freeZone.exercisesCompleted.length >= FREE_ZONE_CONFIG.showSignupAfter) {
+			const completedCount = $freeZone.exercisesCompleted.length;
+			
+			// Track completion with touchpoint based on count
+			funnelTracking.track({
+				eventType: 'view',
+				funnelName: 'try_signup',
+				touchpoint: `try_exercise_complete_${completedCount}` as any,
+				exerciseId,
+				primitiveId,
+				metadata: { completedCount, remaining: FREE_ZONE_CONFIG.maxFreeExercises - completedCount },
+			});
+			
+			// Show signup prompt after completing (with tracking)
+			if (completedCount >= FREE_ZONE_CONFIG.showSignupAfter) {
 				setTimeout(() => {
 					showSignupPrompt = true;
+					funnelTracking.track({
+						eventType: 'view',
+						funnelName: 'try_signup',
+						touchpoint: 'try_signup_modal',
+						exerciseId,
+						primitiveId,
+					});
 				}, 2000);
+			}
+			
+			// Show limit modal if they've finished all free exercises
+			if (completedCount >= FREE_ZONE_CONFIG.maxFreeExercises) {
+				setTimeout(() => {
+					showLimitModal = true;
+					funnelTracking.track({
+						eventType: 'view',
+						funnelName: 'limit_reached',
+						touchpoint: 'try_limit_modal',
+						exerciseId,
+						primitiveId,
+					});
+				}, 3500);
 			}
 		}
 	}
@@ -429,13 +482,46 @@
 			</div>
 		{/if}
 
-		<!-- Signup Prompt -->
-		{#if showSignupPrompt && !showSuccess}
+		<!-- Signup Prompt Banner -->
+		{#if showSignupPrompt && !showSuccess && !showLimitModal}
 			<SignupPrompt 
 				variant="banner" 
-				on:close={() => showSignupPrompt = false}
+				on:close={() => {
+					showSignupPrompt = false;
+					funnelTracking.track({
+						eventType: 'dismiss',
+						funnelName: 'try_signup',
+						touchpoint: 'try_signup_banner',
+						exerciseId,
+						primitiveId,
+					});
+				}}
 			/>
 		{/if}
+
+		<!-- Limit Reached Modal - High Priority Conversion Point -->
+		<UpgradePrompt 
+			variant="modal"
+			bind:show={showLimitModal}
+			funnelName="limit_reached"
+			touchpoint="try_limit_modal"
+			{exerciseId}
+			{primitiveId}
+			title="You've Completed All Free Exercises! 🎉"
+			subtitle="Ready to unlock your full potential? Get unlimited access to all exercises, lessons, and languages."
+			ctaText="Start Learning for Free"
+			ctaLink="/register"
+			features={[
+				"100+ exercises across all difficulty levels",
+				"8 programming languages",
+				"Full lesson library with theory",
+				"Progress tracking & achievements",
+				"Code review & personalized feedback"
+			]}
+			on:dismiss={() => {
+				showLimitModal = false;
+			}}
+		/>
 	</div>
 {:else}
 	<div class="min-h-screen flex items-center justify-center">
